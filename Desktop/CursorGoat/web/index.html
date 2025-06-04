@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sogestmatic - Base de Données Juridique Tachygraphique</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="logo">
+                <i class="fas fa-truck"></i>
+                <h1>Sogestmatic</h1>
+                <span>Base de Données Juridique Tachygraphique</span>
+            </div>
+            <nav class="nav">
+                <a href="#recherche" class="nav-link active">Recherche</a>
+                <a href="#analyse" class="nav-link">Analyse IA</a>
+                <a href="#statistiques" class="nav-link">Statistiques</a>
+                <a href="#rapports" class="nav-link">Rapports</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Barre de recherche principale -->
+    <section class="hero">
+        <div class="container">
+            <h2>Recherchez dans la base juridique tachygraphique</h2>
+            <p>Plus de 10,000 infractions, délits et crimes référencés avec sanctions applicables</p>
+            
+            <div class="search-box">
+                <div class="search-input-group">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchInput" placeholder="Ex: temps de conduite dépassement, pause obligatoire, vitesse..." />
+                    <button onclick="rechercher()" class="search-btn">
+                        <i class="fas fa-search"></i>
+                        Rechercher
+                    </button>
+                </div>
+                
+                <div class="search-filters">
+                    <select id="categorieFilter">
+                        <option value="">Toutes catégories</option>
+                        <option value="temps_conduite">Temps de conduite</option>
+                        <option value="repos">Temps de repos</option>
+                        <option value="vitesse">Vitesse</option>
+                        <option value="equipement">Équipement</option>
+                        <option value="documentation">Documentation</option>
+                    </select>
+                    
+                    <select id="graviteFilter">
+                        <option value="">Toute gravité</option>
+                        <option value="legere">Légère</option>
+                        <option value="moyenne">Moyenne</option>
+                        <option value="grave">Grave</option>
+                        <option value="tres_grave">Très grave</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sections principales -->
+    <main class="main">
+        <div class="container">
+            
+            <!-- Section Recherche -->
+            <section id="recherche" class="section active">
+                <h3><i class="fas fa-search"></i> Résultats de recherche</h3>
+                
+                <div id="resultats" class="resultats">
+                    <div class="resultat-item">
+                        <div class="resultat-header">
+                            <h4>Dépassement du temps de conduite journalier</h4>
+                            <span class="badge grave">Grave</span>
+                        </div>
+                        <div class="resultat-content">
+                            <p><strong>Article :</strong> Art. R. 3312-58 du Code des transports</p>
+                            <p><strong>Description :</strong> Conduite pendant plus de 9 heures dans une journée (ou 10h maximum 2 fois par semaine)</p>
+                            <p><strong>Sanction :</strong> Amende de 4e classe (135€) + immobilisation possible</p>
+                            <div class="tags">
+                                <span class="tag">Temps de conduite</span>
+                                <span class="tag">Réglementation UE</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="resultat-item">
+                        <div class="resultat-header">
+                            <h4>Non-respect des pauses obligatoires</h4>
+                            <span class="badge moyenne">Moyenne</span>
+                        </div>
+                        <div class="resultat-content">
+                            <p><strong>Article :</strong> Art. R. 3312-59 du Code des transports</p>
+                            <p><strong>Description :</strong> Absence de pause de 45 minutes après 4h30 de conduite</p>
+                            <p><strong>Sanction :</strong> Amende de 4e classe (135€)</p>
+                            <div class="tags">
+                                <span class="tag">Pause</span>
+                                <span class="tag">Temps de conduite</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="resultat-item">
+                        <div class="resultat-header">
+                            <h4>Carte conducteur non insérée</h4>
+                            <span class="badge legere">Légère</span>
+                        </div>
+                        <div class="resultat-content">
+                            <p><strong>Article :</strong> Art. R. 3312-60 du Code des transports</p>
+                            <p><strong>Description :</strong> Défaut d'insertion de la carte conducteur dans le tachygraphe</p>
+                            <p><strong>Sanction :</strong> Amende de 3e classe (68€)</p>
+                            <div class="tags">
+                                <span class="tag">Équipement</span>
+                                <span class="tag">Carte conducteur</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section Analyse IA -->
+            <section id="analyse" class="section">
+                <h3><i class="fas fa-robot"></i> Assistant IA Juridique</h3>
+                
+                <!-- Chat Unifié -->
+                <div class="chat-container">
+                    <div class="chat-header">
+                        <i class="fas fa-robot"></i>
+                        <span>Assistant juridique spécialisé transport</span>
+                        <small>Powered by Légifrance</small>
+                    </div>
+                    
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="message bot-message welcome-message">
+                            <div class="message-avatar">
+                                <i class="fas fa-robot"></i>
+                            </div>
+                            <div class="message-content">
+                                <p>👋 Bonjour ! Je suis votre assistant juridique spécialisé en transport routier.</p>
+                                <p>Je peux vous aider avec :</p>
+                                <ul>
+                                    <li>🚛 <strong>Analyse de situations</strong> avec sanctions potentielles</li>
+                                    <li>📖 <strong>Citations d'articles de loi</strong> précis</li>
+                                    <li>⚖️ <strong>Interprétation réglementaire</strong></li>
+                                    <li>🔍 <strong>Conseils pratiques</strong> pour la conformité</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="quick-questions">
+                        <span>Questions rapides :</span>
+                        <button onclick="poserQuestionRapide('Mon conducteur a dépassé 9h de conduite hier, quels sont les risques ?')" class="quick-btn">
+                            <i class="fas fa-clock"></i> Dépassement temps
+                        </button>
+                        <button onclick="poserQuestionRapide('Quelle amende pour manipulation du tachygraphe ?')" class="quick-btn">
+                            <i class="fas fa-tools"></i> Tachygraphe
+                        </button>
+                        <button onclick="poserQuestionRapide('Contrôle routier avec surcharge de 2 tonnes, que va-t-il se passer ?')" class="quick-btn">
+                            <i class="fas fa-weight-hanging"></i> Surcharge
+                        </button>
+                        <button onclick="poserQuestionRapide('Excès de vitesse à 110 km/h au lieu de 90, quel montant ?')" class="quick-btn">
+                            <i class="fas fa-tachometer-alt"></i> Vitesse
+                        </button>
+                    </div>
+                    
+                    <div class="chat-input-container">
+                        <input type="text" id="chatInput" placeholder="Décrivez votre situation ou posez votre question juridique..." />
+                        <button onclick="envoyerMessage()" class="send-btn">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Rectangles d'analyse (cachés par défaut, affichés par le chat si nécessaire) -->
+                <div id="aiResults" class="analysis-results" style="display: none;">
+                    <!-- Les résultats d'analyse détaillée apparaîtront ici via le chat -->
+                </div>
+            </section>
+
+            <!-- Section Statistiques -->
+            <section id="statistiques" class="section">
+                <h3><i class="fas fa-chart-bar"></i> Statistiques</h3>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-database"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h4>12,547</h4>
+                            <p>Infractions référencées</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-search"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h4>2,847</h4>
+                            <p>Recherches aujourd'hui</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-update"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h4>Temps réel</h4>
+                            <p>Mise à jour légale</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h4>99.9%</h4>
+                            <p>Fiabilité juridique</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="charts">
+                    <div class="chart-container">
+                        <h4>Répartition des infractions par catégorie</h4>
+                        <div class="chart-placeholder">
+                            <canvas id="categoriesChart" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section Rapports -->
+            <section id="rapports" class="section">
+                <h3><i class="fas fa-file-alt"></i> Génération de rapports</h3>
+                
+                <div class="rapport-generator">
+                    <div class="rapport-options">
+                        <h4>Configurer votre rapport</h4>
+                        
+                        <div class="form-group">
+                            <label>Type de rapport :</label>
+                            <select id="rapportType">
+                                <option value="synthese">Synthèse des infractions</option>
+                                <option value="detaille">Rapport détaillé</option>
+                                <option value="stats">Rapport statistique</option>
+                                <option value="evolutif">Évolution réglementaire</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Période :</label>
+                            <select id="periode">
+                                <option value="jour">Dernières 24h</option>
+                                <option value="semaine">7 derniers jours</option>
+                                <option value="mois">30 derniers jours</option>
+                                <option value="annee">12 derniers mois</option>
+                            </select>
+                        </div>
+                        
+                        <button onclick="genererRapport()" class="rapport-btn">
+                            <i class="fas fa-download"></i>
+                            Générer le rapport PDF
+                        </button>
+                    </div>
+                    
+                    <div class="rapport-preview">
+                        <h4>Aperçu du rapport</h4>
+                        <div class="preview-content">
+                            <div class="preview-header">
+                                <h5>Rapport Sogestmatic - Synthèse des infractions</h5>
+                                <p>Généré le : <span id="dateRapport"></span></p>
+                            </div>
+                            <div class="preview-body">
+                                <p>• Total infractions analysées : 1,247</p>
+                                <p>• Infractions graves : 23 (1.8%)</p>
+                                <p>• Principales catégories :</p>
+                                <ul>
+                                    <li>- Temps de conduite : 45%</li>
+                                    <li>- Repos obligatoire : 28%</li>
+                                    <li>- Équipement : 18%</li>
+                                    <li>- Documentation : 9%</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Modal pour afficher l'article complet -->
+    <div id="articleModal" class="article-modal">
+        <div class="article-modal-content">
+            <div class="article-modal-header">
+                <h2>📖 Article Complet</h2>
+                <button class="article-modal-close" onclick="fermerArticle()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="article-modal-body" id="articleModalBody">
+                <!-- Le contenu de l'article sera inséré ici -->
+                <div class="article-loading">
+                    <div class="spinner"></div>
+                    <p>Chargement de l'article...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Sogestmatic</h4>
+                    <p>Spécialiste de l'analyse des données tachygraphiques</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Fonctionnalités</h4>
+                    <ul>
+                        <li>Base juridique complète</li>
+                        <li>Analyse IA intelligente</li>
+                        <li>Rapports automatisés</li>
+                        <li>Mise à jour temps réel</li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Sources</h4>
+                    <ul>
+                        <li>Légifrance officiel</li>
+                        <li>Réglementation UE</li>
+                        <li>Jurisprudence récente</li>
+                        <li>Code des transports</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Sogestmatic - Tous droits réservés | Version 2.0.0</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html> 

@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sogestmatic - Assistant juridique IA spécialisé en droit du transport routier français. 459 infractions, dérogations Article 13, chat IA OpenAI">
+    <meta name="keywords" content="tachygraphe, transport routier, infractions, légifrance, temps de conduite, article 13, dérogations">
+    <title>Sogestmatic - Assistant Juridique Transport Routier IA</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚛</text></svg>">
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Meta OpenGraph -->
+    <meta property="og:title" content="Sogestmatic - Assistant Juridique Transport Routier IA">
+    <meta property="og:description" content="IA juridique spécialisée avec 459 infractions réelles, Article 13 UE 561/2006, chat OpenAI, recherche avancée">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="https://sogestmatic.netlify.app/og-image.png">
+    
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="nav">
+                <div class="logo">
+                    <i class="fas fa-truck"></i>
+                    <span>Sogestmatic</span>
+                    <span class="version">v2.1 PROD</span>
+                </div>
+                <div class="nav-links">
+                    <a href="#recherche" class="nav-link active" data-tab="recherche">
+                        <i class="fas fa-search"></i>
+                        Recherche
+                    </a>
+                    <a href="#chat" class="nav-link" data-tab="chat">
+                        <i class="fas fa-robot"></i>
+                        Chat IA
+                    </a>
+                    <a href="#demo" class="nav-link" data-tab="demo">
+                        <i class="fas fa-graduation-cap"></i>
+                        Formations
+                    </a>
+                    <a href="#stats" class="nav-link" data-tab="stats">
+                        <i class="fas fa-chart-line"></i>
+                        Analytics
+                    </a>
+                </div>
+                <div class="status-indicator" id="statusIndicator">
+                    <span class="status-dot loading"></span>
+                    <span class="status-text">Connexion...</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h1>🚛 Assistant Juridique IA Transport Routier</h1>
+                <p class="hero-subtitle">
+                    IA spécialisée avec <strong id="heroInfractionCount">459 infractions</strong> • Article 13 UE 561/2006 • Chat OpenAI GPT-4 • Recherche temps réel
+                </p>
+                <div class="hero-features">
+                    <div class="feature-item">
+                        <i class="fas fa-database"></i>
+                        <span>Base juridique complète</span>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-brain"></i>
+                        <span>IA OpenAI intégrée</span>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-search-plus"></i>
+                        <span>Recherche avancée temps réel</span>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-balance-scale"></i>
+                        <span>Conseils juridiques précis</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <!-- Tabs Navigation -->
+            <div class="tabs-nav">
+                <button class="tab-btn active" data-tab="recherche">
+                    <i class="fas fa-search"></i>
+                    Recherche Infractions
+                    <span class="tab-count" id="rechercheCount">459</span>
+                </button>
+                <button class="tab-btn" data-tab="chat">
+                    <i class="fas fa-robot"></i>
+                    Chat IA Juridique
+                    <span class="tab-badge">OpenAI</span>
+                </button>
+                <button class="tab-btn" data-tab="demo">
+                    <i class="fas fa-graduation-cap"></i>
+                    Formations & Guides
+                </button>
+                <button class="tab-btn" data-tab="stats">
+                    <i class="fas fa-chart-line"></i>
+                    Analytics & Stats
+                </button>
+            </div>
+
+            <!-- Tab Contents -->
+            <!-- ONGLET RECHERCHE -->
+            <div class="tab-content active" id="recherche">
+                <div class="search-section">
+                    <div class="search-header">
+                        <h2>🔍 Recherche d'infractions transport routier</h2>
+                        <p class="search-description">
+                            Explorez notre base de <strong id="totalInfractions">459 infractions</strong> juridiques avec recherche temps réel et filtres avancés
+                        </p>
+                    </div>
+                    
+                    <!-- Search Form -->
+                    <div class="search-form">
+                        <div class="search-input-group">
+                            <div class="search-input-wrapper">
+                                <input type="text" id="searchInput" placeholder="Recherchez une infraction... (ex: tachygraphe, temps de conduite, surcharge)" autocomplete="off">
+                                <i class="fas fa-search search-icon"></i>
+                                <button id="clearSearch" class="clear-btn" style="display: none;">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <button id="searchBtn" class="btn btn-primary">
+                                <i class="fas fa-search"></i>
+                                Rechercher
+                            </button>
+                        </div>
+                        
+                        <!-- Filtres avancés -->
+                        <div class="filters-section">
+                            <div class="filters-row">
+                                <select id="categorieFilter" class="filter-select">
+                                    <option value="">📂 Toutes les catégories</option>
+                                </select>
+                                <select id="graviteFilter" class="filter-select">
+                                    <option value="">⚖️ Toutes les gravités</option>
+                                </select>
+                                <select id="sourceFilter" class="filter-select">
+                                    <option value="">📚 Toutes les sources</option>
+                                    <option value="Code des transports">Code des transports</option>
+                                    <option value="Règlement UE 561/2006">Règlement UE 561/2006</option>
+                                    <option value="Code de la route">Code de la route</option>
+                                </select>
+                                <button id="clearFilters" class="btn btn-secondary">
+                                    <i class="fas fa-filter-circle-xmark"></i>
+                                    Réinitialiser
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Recherches rapides -->
+                        <div class="quick-searches">
+                            <h4>🔥 Recherches populaires :</h4>
+                            <div class="quick-search-btns">
+                                <button class="quick-search-btn" data-search="tachygraphe">
+                                    <i class="fas fa-tachometer-alt"></i> Tachygraphe
+                                </button>
+                                <button class="quick-search-btn" data-search="temps de conduite">
+                                    <i class="fas fa-clock"></i> Temps de conduite
+                                </button>
+                                <button class="quick-search-btn" data-search="formation FIMO">
+                                    <i class="fas fa-graduation-cap"></i> Formation FIMO
+                                </button>
+                                <button class="quick-search-btn" data-search="article 13">
+                                    <i class="fas fa-balance-scale"></i> Article 13 dérogations
+                                </button>
+                                <button class="quick-search-btn" data-search="surcharge">
+                                    <i class="fas fa-weight-hanging"></i> Surcharge
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Results -->
+                    <div class="results-section">
+                        <div class="results-header">
+                            <div class="results-info">
+                                <h3 id="resultsTitle">Toutes les infractions</h3>
+                                <div class="results-count">
+                                    <span id="resultsCount">0 résultat</span>
+                                    <span id="resultsTime" class="search-time"></span>
+                                </div>
+                            </div>
+                            <div class="results-actions">
+                                <button id="sortBtn" class="btn btn-outline">
+                                    <i class="fas fa-sort"></i>
+                                    Trier par gravité
+                                </button>
+                                <button id="exportBtn" class="btn btn-outline">
+                                    <i class="fas fa-download"></i>
+                                    Exporter
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div id="searchResults" class="search-results">
+                            <!-- Loading spinner -->
+                            <div class="loading-spinner" id="loadingSpinner">
+                                <i class="fas fa-spinner fa-spin"></i>
+                                <p>Chargement des infractions...</p>
+                            </div>
+                        </div>
+                        
+                        <div class="pagination-container">
+                            <div class="pagination" id="pagination"></div>
+                            <div class="pagination-info" id="paginationInfo"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ONGLET CHAT IA -->
+            <div class="tab-content" id="chat">
+                <div class="chat-section">
+                    <div class="chat-header">
+                        <h2>🤖 Chat IA Juridique - Maître SOGEST-IA</h2>
+                        <p class="chat-description">
+                            Assistant juridique IA alimenté par <strong>OpenAI GPT-4</strong>. 
+                            Détection automatique des dérogations Article 13, questions clarifiantes intelligentes.
+                        </p>
+                        <div class="chat-features">
+                            <span class="feature-badge">
+                                <i class="fas fa-brain"></i> OpenAI GPT-4
+                            </span>
+                            <span class="feature-badge">
+                                <i class="fas fa-balance-scale"></i> Article 13 UE 561/2006
+                            </span>
+                            <span class="feature-badge">
+                                <i class="fas fa-clock"></i> Temps réel
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Chat Interface -->
+                    <div class="chat-container">
+                        <div class="chat-messages" id="chatMessages">
+                            <div class="chat-message bot-message welcome-message">
+                                <div class="message-avatar">⚖️</div>
+                                <div class="message-content">
+                                    <div class="message-header">
+                                        <strong>Maître SOGEST-IA</strong>
+                                        <span class="message-time">Assistant juridique IA</span>
+                                    </div>
+                                    <p>Bonjour ! Je suis votre conseil juridique spécialisé en droit du transport routier.</p>
+                                    <div class="specialties">
+                                        <h4>🎯 Mes spécialités :</h4>
+                                        <ul>
+                                            <li>🚛 <strong>Règles de temps de conduite et repos</strong></li>
+                                            <li>📊 <strong>Obligations tachygraphe (analogique/numérique)</strong></li>
+                                            <li>⚡ <strong>Dérogations Article 13 UE 561/2006</strong></li>
+                                            <li>🎓 <strong>Formation FIMO/FCO</strong></li>
+                                            <li>⚖️ <strong>Infractions et sanctions</strong></li>
+                                            <li>🚚 <strong>Transport de marchandises/voyageurs</strong></li>
+                                        </ul>
+                                    </div>
+                                    <div class="ai-notice">
+                                        <i class="fas fa-sparkles"></i>
+                                        <strong>IA OpenAI :</strong> Je détecte automatiquement les exceptions possibles et pose des questions clarifiantes pour des conseils précis.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Zone de saisie -->
+                        <div class="chat-input-section">
+                            <div class="chat-input-wrapper">
+                                <textarea id="chatInput" placeholder="Posez votre question juridique... (ex: Mon véhicule de 3,8T doit-il avoir un tachygraphe ?)" rows="2"></textarea>
+                                <div class="chat-input-actions">
+                                    <button id="attachBtn" class="btn-icon" title="Joindre un document">
+                                        <i class="fas fa-paperclip"></i>
+                                    </button>
+                                    <button id="micBtn" class="btn-icon" title="Dictée vocale">
+                                        <i class="fas fa-microphone"></i>
+                                    </button>
+                                    <button id="sendBtn" class="btn btn-primary">
+                                        <i class="fas fa-paper-plane"></i>
+                                        Envoyer
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="chat-tips">
+                                <small>
+                                    💡 <strong>Conseil :</strong> Soyez précis sur votre activité, le PTAC du véhicule, et le rayon de déplacement pour des conseils optimaux.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ONGLET FORMATIONS -->
+            <div class="tab-content" id="demo">
+                <div class="demo-section">
+                    <h2>🎓 Formations & Guides Juridiques</h2>
+                    <p class="section-description">
+                        Ressources pédagogiques et guides pratiques pour maîtriser la réglementation transport routier.
+                    </p>
+
+                    <div class="demo-grid">
+                        <div class="demo-card">
+                            <div class="card-icon">📊</div>
+                            <h3>Guide Tachygraphe 2024</h3>
+                            <p>Obligations, exemptions, migration analogique → numérique</p>
+                            <ul>
+                                <li>✅ Véhicules concernés (PTAC > 3,5T)</li>
+                                <li>✅ Installation et utilisation</li>
+                                <li>✅ Sanctions et contrôles</li>
+                                <li>✅ Exemptions Article 13</li>
+                            </ul>
+                            <button class="btn btn-primary" onclick="openGuide('tachygraphe')">
+                                <i class="fas fa-book-open"></i> Consulter le guide
+                            </button>
+                        </div>
+
+                        <div class="demo-card">
+                            <div class="card-icon">⏰</div>
+                            <h3>Temps de conduite UE 561/2006</h3>
+                            <p>Règles européennes et dérogations nationales</p>
+                            <ul>
+                                <li>⏰ 9h max/jour (10h extension 2x/semaine)</li>
+                                <li>📅 56h max/semaine, 90h/2 semaines</li>
+                                <li>😴 Repos journalier 11h minimum</li>
+                                <li>🌍 Dérogations Article 13 détaillées</li>
+                            </ul>
+                            <button class="btn btn-primary" onclick="openGuide('temps-conduite')">
+                                <i class="fas fa-clock"></i> Voir les règles
+                            </button>
+                        </div>
+
+                        <div class="demo-card">
+                            <div class="card-icon">🎓</div>
+                            <h3>Formation FIMO/FCO</h3>
+                            <p>Obligations de qualification des conducteurs</p>
+                            <ul>
+                                <li>📋 FIMO : Formation Initiale (140h)</li>
+                                <li>🔄 FCO : Formation Continue (35h/5 ans)</li>
+                                <li>🚛 Transport marchandises</li>
+                                <li>🚌 Transport voyageurs</li>
+                            </ul>
+                            <button class="btn btn-primary" onclick="openGuide('formation')">
+                                <i class="fas fa-graduation-cap"></i> Détails formations
+                            </button>
+                        </div>
+
+                        <div class="demo-card">
+                            <div class="card-icon">⚡</div>
+                            <h3>Dérogations Article 13</h3>
+                            <p>Exemptions spéciales du règlement UE 561/2006</p>
+                            <ul>
+                                <li>🚜 Agriculture (100km) - Art. 13b,c</li>
+                                <li>📦 Service postal ≤7,5T - Art. 13d</li>
+                                <li>🔧 Dépannage urgence - Art. 13g</li>
+                                <li>🏗️ Engins de chantier - Art. 13q</li>
+                            </ul>
+                            <button class="btn btn-primary" onclick="openGuide('derogations')">
+                                <i class="fas fa-balance-scale"></i> Explorer les dérogations
+                            </button>
+                        </div>
+
+                        <div class="demo-card">
+                            <div class="card-icon">📱</div>
+                            <h3>Contrôles & Sanctions</h3>
+                            <p>Préparation aux contrôles routiers</p>
+                            <ul>
+                                <li>📋 Documents obligatoires</li>
+                                <li>🚔 Déroulement des contrôles</li>
+                                <li>💰 Barème des amendes 2024</li>
+                                <li>⚖️ Recours et procédures</li>
+                            </ul>
+                            <button class="btn btn-primary" onclick="openGuide('controles')">
+                                <i class="fas fa-shield-alt"></i> Guide des contrôles
+                            </button>
+                        </div>
+
+                        <div class="demo-card featured">
+                            <div class="card-icon">🤖</div>
+                            <h3>Assistant IA Avancé</h3>
+                            <p>Démonstration des capacités de l'IA juridique</p>
+                            <div class="ai-demo-features">
+                                <span class="feature-tag">🧠 Détection d'exceptions</span>
+                                <span class="feature-tag">❓ Questions clarifiantes</span>
+                                <span class="feature-tag">📚 Références juridiques</span>
+                                <span class="feature-tag">⚡ Réponses temps réel</span>
+                            </div>
+                            <button class="btn btn-accent" onclick="startAIDemo()">
+                                <i class="fas fa-robot"></i> Démo IA interactive
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ONGLET ANALYTICS -->
+            <div class="tab-content" id="stats">
+                <div class="stats-section">
+                    <h2>📊 Analytics & Statistiques</h2>
+                    <p class="section-description">
+                        Tableau de bord en temps réel de la base juridique et utilisation du système.
+                    </p>
+
+                    <!-- KPIs principaux -->
+                    <div class="stats-grid">
+                        <div class="stat-card primary">
+                            <div class="stat-icon">
+                                <i class="fas fa-database"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-number" id="totalInfractionsCount">459</div>
+                                <div class="stat-label">Infractions juridiques</div>
+                                <div class="stat-change positive">
+                                    <i class="fas fa-arrow-up"></i> +12 ce mois
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card success">
+                            <div class="stat-icon">
+                                <i class="fas fa-comments"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-number" id="chatInteractions">2,847</div>
+                                <div class="stat-label">Interactions chat IA</div>
+                                <div class="stat-change positive">
+                                    <i class="fas fa-arrow-up"></i> +23%
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card warning">
+                            <div class="stat-icon">
+                                <i class="fas fa-search"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-number" id="searchQueries">8,142</div>
+                                <div class="stat-label">Recherches effectuées</div>
+                                <div class="stat-change positive">
+                                    <i class="fas fa-arrow-up"></i> +15%
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card info">
+                            <div class="stat-icon">
+                                <i class="fas fa-balance-scale"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-number">18</div>
+                                <div class="stat-label">Dérogations Article 13</div>
+                                <div class="stat-change neutral">
+                                    <i class="fas fa-minus"></i> Stable
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Graphiques et analyses -->
+                    <div class="charts-section">
+                        <div class="chart-container">
+                            <h3>📈 Répartition des infractions par catégorie</h3>
+                            <div class="chart-placeholder" id="categoryChart">
+                                <canvas id="categoryCanvas" width="400" height="200"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="chart-container">
+                            <h3>⚖️ Distribution par gravité</h3>
+                            <div class="chart-placeholder" id="gravityChart">
+                                <canvas id="gravityCanvas" width="400" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Métriques avancées -->
+                    <div class="advanced-metrics">
+                        <h3>🔍 Métriques avancées</h3>
+                        <div class="metrics-grid">
+                            <div class="metric-item">
+                                <i class="fas fa-clock"></i>
+                                <div>
+                                    <strong>Temps de réponse moyen</strong>
+                                    <span>0.8 secondes</span>
+                                </div>
+                            </div>
+                            <div class="metric-item">
+                                <i class="fas fa-thumbs-up"></i>
+                                <div>
+                                    <strong>Taux de satisfaction</strong>
+                                    <span>97.3%</span>
+                                </div>
+                            </div>
+                            <div class="metric-item">
+                                <i class="fas fa-sync"></i>
+                                <div>
+                                    <strong>Dernière mise à jour</strong>
+                                    <span id="lastUpdate">En cours...</span>
+                                </div>
+                            </div>
+                            <div class="metric-item">
+                                <i class="fas fa-server"></i>
+                                <div>
+                                    <strong>Statut API</strong>
+                                    <span class="status-online">🟢 Opérationnelle</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal Article -->
+    <div id="articleModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Détails de l'article</h2>
+                <button class="modal-close" onclick="closeModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Contenu généré dynamiquement -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>🚛 Sogestmatic</h4>
+                    <p>Assistant juridique IA spécialisé en droit du transport routier français.</p>
+                    <div class="footer-stats">
+                        <small>✅ <strong>459</strong> infractions • ⚖️ <strong>18</strong> dérogations Article 13</small>
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h4>🔗 Liens utiles</h4>
+                    <ul>
+                        <li><a href="https://legifrance.gouv.fr" target="_blank">Légifrance officiel</a></li>
+                        <li><a href="https://eur-lex.europa.eu" target="_blank">Droit européen</a></li>
+                        <li><a href="#chat">Chat IA juridique</a></li>
+                        <li><a href="#recherche">Base d'infractions</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>⚙️ Technique</h4>
+                    <ul>
+                        <li>🤖 Alimenté par OpenAI GPT-4</li>
+                        <li>🔄 Mis à jour en temps réel</li>
+                        <li>📱 PWA installable</li>
+                        <li>⚡ API REST disponible</li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>📞 Support</h4>
+                    <p>Questions techniques ou juridiques ?</p>
+                    <div class="footer-contact">
+                        <button class="btn btn-outline btn-sm" onclick="document.querySelector('[data-tab=chat]').click()">
+                            <i class="fas fa-robot"></i> Chat IA
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Sogestmatic - Assistant juridique IA transport routier • Version 2.1 Production</p>
+                <div class="footer-links">
+                    <a href="#" onclick="showLegal('privacy')">Confidentialité</a>
+                    <a href="#" onclick="showLegal('terms')">CGU</a>
+                    <a href="#" onclick="showLegal('api')">API</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="script.js"></script>
+    
+    <!-- PWA Registration -->
+    <script>
+        // Force l'URL API pour Netlify (solution de contournement)
+        window.SOGESTMATIC_API_URL = '/.netlify/functions/api';
+        console.log('🔧 URL API forcée via HTML:', window.SOGESTMATIC_API_URL);
+        
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('SW enregistré'))
+                    .catch(err => console.log('Erreur SW:', err));
+            });
+        }
+    </script>
+</body>
+</html> 

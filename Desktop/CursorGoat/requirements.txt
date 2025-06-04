@@ -1,0 +1,34 @@
+# Version simplifiée pour déploiement rapide
+# API et Backend
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.0
+
+# Base de données
+asyncpg==0.29.0
+psycopg2-binary==2.9.9
+sqlalchemy[asyncio]==2.0.23
+
+# Intelligence Artificielle (versions compatibles)
+openai>=1.6.1
+langchain==0.0.340
+langchain-openai==0.0.2
+
+# Traitement de données
+pandas==2.1.4
+numpy==1.25.2
+requests==2.31.0
+
+# Cache
+redis==5.0.1
+
+# Utilitaires
+python-dotenv==1.0.0
+click==8.1.7
+
+# Sécurité (versions flexibles)
+cryptography>=3.4.8
+passlib[bcrypt]==1.7.4
+
+# Logs
+loguru==0.7.2 
