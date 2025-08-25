@@ -45,15 +45,21 @@ export default function AssistantIAPage() {
   const loadConversations = () => {
     if (!user) return
     const userConversations = chatService.getConversations(user.id)
+    console.log("loadConversations: user conversations", userConversations)
     setConversations(userConversations)
 
     if (userConversations.length > 0 && !currentConversation) {
+      console.log("loadConversations: setting first conversation", userConversations[0])
       setCurrentConversation(userConversations[0])
       setTone(userConversations[0].tone)
+    } else if (userConversations.length === 0 && !currentConversation) {
+      console.log("loadConversations: no conversations, creating new one")
+      handleNewConversation()
     }
   }
 
   const handleNewConversation = () => {
+    console.log("handleNewConversation: creating new conversation")
     const newConversation: Conversation = {
       id: Date.now().toString(),
       title: "Nouvelle conversation",
@@ -63,6 +69,7 @@ export default function AssistantIAPage() {
       tone: tone,
     }
 
+    console.log("handleNewConversation: new conversation", newConversation)
     setCurrentConversation(newConversation)
     if (user) {
       chatService.saveConversation(user.id, newConversation)
@@ -101,8 +108,12 @@ export default function AssistantIAPage() {
   }
 
   const handleSendMessage = async (messageContent: string, selectedTone: ChatTone) => {
-    if (!user || !currentConversation) return
+    if (!user || !currentConversation) {
+      console.log("handleSendMessage: user or currentConversation missing", { user, currentConversation })
+      return
+    }
 
+    console.log("handleSendMessage: starting", { messageContent, selectedTone })
     setIsLoading(true)
     setTokenLimitError(null)
 
@@ -113,6 +124,8 @@ export default function AssistantIAPage() {
       content: messageContent,
       timestamp: new Date().toISOString(),
     }
+
+    console.log("handleSendMessage: user message created", userMessage)
 
     const updatedConversation = {
       ...currentConversation,
@@ -126,10 +139,12 @@ export default function AssistantIAPage() {
       updatedConversation.title = chatService.generateConversationTitle(messageContent)
     }
 
+    console.log("handleSendMessage: updating conversation", updatedConversation)
     setCurrentConversation(updatedConversation)
     chatService.saveConversation(user.id, updatedConversation)
 
     // Get AI response
+    console.log("handleSendMessage: calling chatService.sendMessage")
     const result = await chatService.sendMessage(
       messageContent,
       currentConversation.id,
@@ -138,6 +153,8 @@ export default function AssistantIAPage() {
       user.id,
       user.role,
     )
+
+    console.log("handleSendMessage: chatService result", result)
 
     if (result.success && result.response) {
       const assistantMessage: Message = {
@@ -153,6 +170,7 @@ export default function AssistantIAPage() {
         updatedAt: new Date().toISOString(),
       }
 
+      console.log("handleSendMessage: final conversation", finalConversation)
       setCurrentConversation(finalConversation)
       chatService.saveConversation(user.id, finalConversation)
       loadConversations()
@@ -183,6 +201,7 @@ export default function AssistantIAPage() {
         updatedAt: new Date().toISOString(),
       }
 
+      console.log("handleSendMessage: error conversation", errorConversation)
       setCurrentConversation(errorConversation)
       chatService.saveConversation(user.id, errorConversation)
     }
@@ -237,7 +256,7 @@ export default function AssistantIAPage() {
       >
         <ConversationSidebar
           conversations={conversations}
-          currentConversationId={currentConversation?.id}
+          currentConversationId={currentConversation?.id || null}
           onSelectConversation={handleSelectConversation}
           onNewConversation={handleNewConversation}
           onDeleteConversation={handleDeleteConversation}
