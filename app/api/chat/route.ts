@@ -34,8 +34,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Clé API OpenAI manquante' }, { status: 500 })
     }
 
-    // Construire le prompt système
-    const systemPrompt = `Tu es un expert en réglementation transport routier. Réponds en français avec précision et de manière professionnelle.${web ? "\n\nQuand tu t'appuies sur des informations du web, cite systématiquement tes sources à la fin sous un titre 'Sources' avec des liens markdown cliquables [Titre](URL) et insère des renvois [1], [2]... dans le texte. Inclue l'URL exacte." : ""}`
+    // Construire le prompt avec le ton si spécifié
+    let systemPrompt = "Tu es un expert en réglementation transport routier. Réponds en français avec précision."
+    if (tone) {
+      systemPrompt += ` Réponds avec un ton ${tone}.`
+    }
+    if (web) {
+      systemPrompt += "\n\nQuand tu t'appuies sur des informations du web, cite systématiquement tes sources à la fin sous un titre 'Sources' avec des liens markdown cliquables [Titre](URL) et insère des renvois [1], [2]... dans le texte. Inclue l'URL exacte."
+    }
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -44,7 +50,7 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-5-mini',
         messages: [
           {
             role: 'system',
@@ -52,15 +58,12 @@ export async function POST(request: NextRequest) {
           },
           {
             role: 'user',
-            content: String(message)
+            content: message
           }
         ],
         max_tokens: 2000,
         temperature: 0.7,
-        ...(web ? { 
-          tools: [{ type: 'web_search' }], 
-          tool_choice: 'auto' 
-        } : {}),
+        ...(web ? { tools: [{ type: 'web_search_preview' }], tool_choice: 'auto' } : {}),
       }),
     })
 
@@ -76,7 +79,7 @@ export async function POST(request: NextRequest) {
 
     const data = await response.json()
     
-    // Extraire la réponse du modèle
+    // Extraire la réponse de l'API OpenAI
     let aiResponse = data.choices?.[0]?.message?.content
     if (!aiResponse) {
       aiResponse = "Désolé, je n'ai pas pu générer de réponse."

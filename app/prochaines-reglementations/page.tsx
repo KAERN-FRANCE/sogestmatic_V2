@@ -242,7 +242,7 @@ export default function ProchainesReglementationsPage() {
                       <p className="text-xs text-orange-700 font-medium">{reg.deadline}</p>
                     </div>
                   ))}
-                </div>
+            </div>
               </CardContent>
             </Card>
           )}
