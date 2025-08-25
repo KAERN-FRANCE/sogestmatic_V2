@@ -34,16 +34,33 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Clé API OpenAI manquante' }, { status: 500 })
     }
 
-    const response = await fetch('https://api.openai.com/v1/responses', {
+    // Construire le prompt système
+    const systemPrompt = `Tu es un expert en réglementation transport routier. Réponds en français avec précision et de manière professionnelle.${web ? "\n\nQuand tu t'appuies sur des informations du web, cite systématiquement tes sources à la fin sous un titre 'Sources' avec des liens markdown cliquables [Titre](URL) et insère des renvois [1], [2]... dans le texte. Inclue l'URL exacte." : ""}`
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${openaiApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-5-mini',
-        input: `Tu es un expert en réglementation transport routier. Réponds en français avec précision.${web ? "\n\nQuand tu t'appuies sur des informations du web, cite systématiquement tes sources à la fin sous un titre 'Sources' avec des liens markdown cliquables [Titre](URL) et insère des renvois [1], [2]... dans le texte. Inclue l'URL exacte." : ""}\n\nUtilisateur: ${String(message)}`,
-        ...(web ? { tools: [{ type: 'web_search_preview' }], tool_choice: 'auto' } : {}),
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: systemPrompt
+          },
+          {
+            role: 'user',
+            content: String(message)
+          }
+        ],
+        max_tokens: 2000,
+        temperature: 0.7,
+        ...(web ? { 
+          tools: [{ type: 'web_search' }], 
+          tool_choice: 'auto' 
+        } : {}),
       }),
     })
 
@@ -58,18 +75,12 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await response.json()
-    // Prefer output_text; fallback to content array shape
-    let aiResponse = data.output_text as string | undefined
-    if (!aiResponse && Array.isArray(data.output)) {
-      try {
-        const chunks = data.output
-          .flatMap((o: any) => (o?.content ?? []))
-          .filter((c: any) => c?.type === 'output_text' && typeof c.text === 'string')
-          .map((c: any) => c.text)
-        if (chunks.length > 0) aiResponse = chunks.join('\n')
-      } catch {}
+    
+    // Extraire la réponse du modèle
+    let aiResponse = data.choices?.[0]?.message?.content
+    if (!aiResponse) {
+      aiResponse = "Désolé, je n'ai pas pu générer de réponse."
     }
-    if (!aiResponse) aiResponse = "Désolé, je n'ai pas pu générer de réponse."
 
     // Consommer les tokens après une réponse réussie
     if (userId && userRole) {
