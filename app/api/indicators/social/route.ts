@@ -8,10 +8,10 @@ const ONE_DAY = 24 * 60 * 60 * 1000
 const fallbackData = () => {
   const today = new Date().toISOString().slice(0, 10)
   return [
-    { id: 'smic', name: 'SMIC horaire', value: '11.65', unit: '€/h', lastUpdate: today, source: 'Légifrance', change: 0 },
-    { id: 'transport-hourly', name: 'Taux horaire transport', value: '13.85', unit: '€/h', lastUpdate: today, source: 'Convention collective', change: 0 },
-    { id: 'social-charges', name: 'Charges sociales patronales', value: '42.5', unit: '%', lastUpdate: today, source: 'URSSAF' },
-    { id: 'csg-crds', name: 'CSG-CRDS', value: '9.7', unit: '%', lastUpdate: today, source: 'Service public' },
+    { id: 'smic', name: 'SMIC horaire', value: '11,88', unit: '€/h', lastUpdate: today, source: 'Légifrance', change: 0 },
+    { id: 'transport-hourly', name: 'Taux horaire conventionnel', value: '12,09', unit: '€/h', lastUpdate: today, source: 'Convention collective', change: 0 },
+    { id: 'social-charges', name: 'Charges patronales moyennes', value: '42,5', unit: '%', lastUpdate: today, source: 'URSSAF' },
+    { id: 'csg-crds', name: 'CSG CRDS', value: '8,8', unit: '%', lastUpdate: today, source: 'Service public' },
   ]
 }
 

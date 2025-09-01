@@ -103,11 +103,16 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
           </Button>
         </form>
 
-        <div className="mt-6 text-center">
+        <div className="mt-6 text-center space-y-2">
           <Button onClick={onBack} variant="ghost" className="text-sm">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Retour à la connexion
           </Button>
+          <div>
+            <a href="/politiques" target="_blank" className="text-xs text-muted-foreground hover:text-primary">
+              Politiques et conditions d'utilisation
+            </a>
+          </div>
         </div>
       </CardContent>
     </Card>

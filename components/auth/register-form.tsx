@@ -315,7 +315,10 @@ export function RegisterForm({ onToggleMode }: RegisterFormProps) {
             <Checkbox id="consent" checked={consent} onCheckedChange={(v) => setConsent(Boolean(v))} />
             <Label htmlFor="consent" className="text-sm font-normal">
               En soumettant ce formulaire, j'accepte que les informations saisies soient exploitées dans le cadre de la
-              relation commerciale qui peut en découler.
+              relation commerciale qui peut en découler.{" "}
+              <a href="/politiques" target="_blank" className="text-primary hover:underline">
+                Consulter nos politiques
+              </a>
             </Label>
           </div>
 

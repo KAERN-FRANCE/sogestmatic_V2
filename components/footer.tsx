@@ -52,7 +52,6 @@ export function Footer() {
               <Link href="/" className="block text-muted-foreground hover:text-primary transition-colors text-sm">
                 Accueil
               </Link>
-              {/* Prochaines Réglementations (supprimé) */}
               <Link
                 href="/indicateurs-indemnites"
                 className="block text-muted-foreground hover:text-primary transition-colors text-sm"
@@ -60,10 +59,16 @@ export function Footer() {
                 Indicateurs & Indemnités
               </Link>
               <Link
-                href="/assistant-ia"
+                href="/chatbot"
                 className="block text-muted-foreground hover:text-primary transition-colors text-sm"
               >
-                Assistant IA
+                Chatbot IA
+              </Link>
+              <Link
+                href="/politiques"
+                className="block text-muted-foreground hover:text-primary transition-colors text-sm"
+              >
+                Politiques & CGV
               </Link>
             </div>
           </div>

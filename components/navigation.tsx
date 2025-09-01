@@ -16,7 +16,6 @@ export function Navigation() {
     { href: "/prochaines-reglementations", label: "Prochaine Réglementation" },
     { href: "/indicateurs-indemnites", label: "Indicateurs & Indemnités" },
     { href: "/livre-blanc", label: "Livre Blanc" },
-    { href: "/assistant-ia", label: "Assistant IA" },
     { href: "/compte", label: "Mon Compte" },
   ]
 
@@ -51,9 +50,13 @@ export function Navigation() {
                 {link.label}
               </Link>
             ))}
-            <Button asChild className="ml-4 bg-green-accent hover:bg-green-accent-dark text-white">
-              <Link href="/assistant-ia">Accéder à l'IA</Link>
-            </Button>
+            
+            {/* Bouton Accéder à l'IA */}
+            <Link href="/chatbot">
+              <Button className="bg-green-accent hover:bg-green-accent-dark text-white font-medium">
+                Accéder à l'IA
+              </Button>
+            </Link>
           </div>
 
           {/* Mobile menu button */}
@@ -83,11 +86,13 @@ export function Navigation() {
                   {link.label}
                 </Link>
               ))}
-              <Button asChild className="mt-4 mx-2 bg-green-accent hover:bg-green-accent-dark text-white">
-                <Link href="/assistant-ia" onClick={() => setIsMenuOpen(false)}>
+              
+              {/* Bouton Accéder à l'IA pour mobile */}
+              <Link href="/chatbot" onClick={() => setIsMenuOpen(false)}>
+                <Button className="w-full bg-green-accent hover:bg-green-accent-dark text-white font-medium">
                   Accéder à l'IA
-                </Link>
-              </Button>
+                </Button>
+              </Link>
             </div>
           </div>
         )}

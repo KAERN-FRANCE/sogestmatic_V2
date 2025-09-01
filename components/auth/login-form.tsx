@@ -106,6 +106,12 @@ export function LoginForm({ onToggleMode, onForgotPassword }: LoginFormProps) {
             <div>User: user@test.com / user123</div>
           </div>
         </div>
+
+        <div className="mt-4 text-center">
+          <a href="/politiques" target="_blank" className="text-xs text-muted-foreground hover:text-primary">
+            Politiques et conditions d'utilisation
+          </a>
+        </div>
       </CardContent>
     </Card>
   )

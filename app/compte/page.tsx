@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
-import { Loader2, User, Shield, LogOut, Edit, Key, Trash2, Save, X, BarChart3, Calendar } from "lucide-react"
+import { Loader2, User, Shield, LogOut, Edit, Key, Trash2, Save, X, BarChart3, Calendar, FileText } from "lucide-react"
 import { tokenService } from "@/lib/token-service"
 
 type AuthMode = "login" | "register" | "forgot-password"
@@ -260,6 +260,12 @@ export default function ComptePage() {
                   
                   {/* Actions du compte */}
                   <div className="space-y-3">
+                    <Button variant="outline" className="w-full justify-start" asChild>
+                      <a href="/politiques" target="_blank">
+                        <FileText className="mr-2 h-4 w-4" />
+                        Politiques et conditions
+                      </a>
+                    </Button>
                     <Dialog>
                       <DialogTrigger asChild>
                         <Button variant="outline" className="w-full justify-start">
