@@ -99,14 +99,6 @@ export function LoginForm({ onToggleMode, onForgotPassword }: LoginFormProps) {
           </div>
         </div>
 
-        <div className="mt-6 p-4 bg-muted rounded-lg">
-          <p className="text-sm text-muted-foreground mb-2">Comptes de test :</p>
-          <div className="text-xs space-y-1">
-            <div>Admin: admin@sogestmatic.com / admin123</div>
-            <div>User: user@test.com / user123</div>
-          </div>
-        </div>
-
         <div className="mt-4 text-center">
           <a href="/politiques" target="_blank" className="text-xs text-muted-foreground hover:text-primary">
             Politiques et conditions d'utilisation
