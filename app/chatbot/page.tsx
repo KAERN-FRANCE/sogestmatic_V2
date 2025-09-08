@@ -5,7 +5,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Plus, MessageSquare, Trash2, Send, Lock, AlertCircle } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Plus, MessageSquare, Trash2, Send, Lock, AlertCircle, Search, Share2, Copy, X } from "lucide-react"
 import { TypingIndicator } from "@/components/ui/typing-indicator"
 import { useAuth } from "@/hooks/use-auth"
 import { useRouter } from "next/navigation"
@@ -119,10 +120,21 @@ export default function ChatbotPage() {
     isUnlimited: boolean
   } | null>(null)
   const [limitError, setLimitError] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [showShareModal, setShowShareModal] = useState(false)
+  const [shareUrl, setShareUrl] = useState("")
   const scrollAreaRef = useRef<HTMLDivElement>(null)
 
   const currentConversation = conversations.find(c => c.id === currentConversationId)
   const messageLimitService = MessageLimitService.getInstance()
+
+  // Filtrer les conversations selon la recherche
+  const filteredConversations = conversations.filter(conversation => 
+    conversation.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    conversation.messages.some(msg => 
+      msg.text.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+  )
 
   // Rediriger si pas connecté
   useEffect(() => {
@@ -140,6 +152,24 @@ export default function ChatbotPage() {
       }
     }
   }, [busy])
+
+  // Fonction pour générer un lien de partage
+  const generateShareLink = (conversationId: string) => {
+    const baseUrl = window.location.origin
+    const shareUrl = `${baseUrl}/chatbot?share=${conversationId}`
+    setShareUrl(shareUrl)
+    setShowShareModal(true)
+  }
+
+  // Fonction pour copier le lien de partage
+  const copyShareLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl)
+      // Optionnel: afficher une notification de succès
+    } catch (err) {
+      console.error('Erreur lors de la copie:', err)
+    }
+  }
 
   // Charger les conversations depuis Firebase
   useEffect(() => {
@@ -476,7 +506,7 @@ export default function ChatbotPage() {
     <div className="flex h-[calc(100vh-80px)] bg-background">
       {/* Sidebar - Historique des conversations */}
       <div className="w-80 bg-secondary/30 border-r border-border flex flex-col">
-        <div className="p-3 border-b border-border">
+        <div className="p-3 border-b border-border space-y-3">
           <Button 
             onClick={createNewConversation} 
             className="w-full bg-green-accent hover:bg-green-accent-dark text-white h-9"
@@ -484,11 +514,40 @@ export default function ChatbotPage() {
             <Plus className="w-4 h-4 mr-2" />
             Nouvelle conversation
           </Button>
+          
+          {/* Barre de recherche */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Rechercher une conversation..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 h-8 text-sm"
+            />
+            {searchQuery && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+              >
+                <X className="w-3 h-3" />
+              </Button>
+            )}
+          </div>
         </div>
         
         <ScrollArea className="flex-1 p-2">
           <div className="space-y-1">
-            {conversations.map((conversation) => (
+            {filteredConversations.length === 0 && searchQuery ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Search className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">Aucune conversation trouvée</p>
+                <p className="text-xs">Essayez avec d'autres mots-clés</p>
+              </div>
+            ) : (
+              filteredConversations.map((conversation) => (
               <div
                 key={conversation.id}
                 className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${
@@ -511,19 +570,35 @@ export default function ChatbotPage() {
                     )}
                   </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    deleteConversation(conversation.id)
-                  }}
-                  className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
-                >
-                  <Trash2 className="w-3 h-3" />
-                </Button>
+                <div className="flex items-center space-x-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      generateShareLink(conversation.id)
+                    }}
+                    className="h-6 w-6 p-0 text-muted-foreground hover:text-green-accent"
+                    title="Partager cette conversation"
+                  >
+                    <Share2 className="w-3 h-3" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      deleteConversation(conversation.id)
+                    }}
+                    className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+                    title="Supprimer cette conversation"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                </div>
               </div>
-            ))}
+              ))
+            )}
           </div>
         </ScrollArea>
         
@@ -654,6 +729,53 @@ export default function ChatbotPage() {
           </div>
         )}
       </div>
+
+      {/* Modal de partage */}
+      {showShareModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-background border border-border rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Partager la conversation</h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowShareModal(false)}
+                className="h-6 w-6 p-0"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            
+            <p className="text-sm text-muted-foreground mb-4">
+              Copiez ce lien pour partager cette conversation avec d'autres personnes.
+            </p>
+            
+            <div className="flex items-center space-x-2 mb-4">
+              <Input
+                value={shareUrl}
+                readOnly
+                className="flex-1 text-sm"
+              />
+              <Button
+                onClick={copyShareLink}
+                size="sm"
+                className="bg-green-accent hover:bg-green-accent-dark text-white"
+              >
+                <Copy className="w-4 h-4" />
+              </Button>
+            </div>
+            
+            <div className="flex justify-end space-x-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowShareModal(false)}
+              >
+                Fermer
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
