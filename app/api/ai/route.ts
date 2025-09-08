@@ -91,12 +91,17 @@ export async function POST(request: NextRequest) {
 
     // Appel unique: Responses API + web_search (identique à chatbot123)
     try {
+      const model = process.env.MODEL || 'gpt-4.1-mini'
+      console.log(`🤖 [AI] Utilisation du modèle: ${model}`)
+      console.log(`🔍 [AI] Recherche web activée: ${useWebSearch}`)
+      console.log(`📊 [AI] RAG context length: ${ragContext.length}`)
+      
       const resp = await client.responses.create({
-        model: process.env.MODEL || 'gpt-4.1-mini',
+        model: model,
         input: conversationContext,
         instructions: system + ragContext,
-        tools: [{ type: 'web_search' } as any],
-        tool_choice: 'auto',
+        tools: useWebSearch ? [{ type: 'web_search' } as any] : [],
+        tool_choice: useWebSearch ? 'auto' : 'none',
       })
 
       // Extraction robuste du texte de sortie
@@ -113,11 +118,68 @@ export async function POST(request: NextRequest) {
 
       text = (text || '').trim()
       if (!text) {
+        console.error('❌ [AI] Réponse vide de l\'IA')
         return NextResponse.json({ error: 'Réponse vide de l\'IA' }, { status: 500 })
       }
-      return NextResponse.json({ success: true, response: text, mode: 'responses' })
+      
+      console.log(`✅ [AI] Réponse générée avec succès (${text.length} caractères)`)
+      return NextResponse.json({ 
+        success: true, 
+        response: text, 
+        mode: 'responses',
+        model: model,
+        webSearch: useWebSearch,
+        ragUsed: ragContext.length > 0
+      })
     } catch (err: any) {
-      return NextResponse.json({ error: 'Erreur Responses API', details: err?.message || String(err) }, { status: 500 })
+      console.error('❌ [AI] Erreur Responses API:', err?.message || String(err))
+      
+      // Fallback: essayer sans recherche web si l'erreur vient de web_search
+      if (useWebSearch && err?.message?.includes('web_search')) {
+        console.log('🔄 [AI] Tentative de fallback sans recherche web...')
+        try {
+          const fallbackResp = await client.responses.create({
+            model: model,
+            input: conversationContext,
+            instructions: system + ragContext,
+            tools: [],
+            tool_choice: 'none',
+          })
+          
+          let fallbackText: string = (fallbackResp as any).output_text || ''
+          if (!fallbackText) {
+            const output = (fallbackResp as any).output || []
+            const parts = Array.isArray(output)
+              ? output.flatMap((o: any) => Array.isArray(o.content) ? o.content : [])
+              : []
+            fallbackText = parts
+              .map((p: any) => p?.text?.value || p?.text || (typeof p === 'string' ? p : ''))
+              .join('')
+          }
+          
+          fallbackText = (fallbackText || '').trim()
+          if (fallbackText) {
+            console.log(`✅ [AI] Fallback réussi (${fallbackText.length} caractères)`)
+            return NextResponse.json({ 
+              success: true, 
+              response: fallbackText, 
+              mode: 'responses-fallback',
+              model: model,
+              webSearch: false,
+              ragUsed: ragContext.length > 0
+            })
+          }
+        } catch (fallbackErr: any) {
+          console.error('❌ [AI] Fallback échoué:', fallbackErr?.message || String(fallbackErr))
+        }
+      }
+      
+      return NextResponse.json({ 
+        error: 'Erreur Responses API', 
+        details: err?.message || String(err),
+        model: model,
+        webSearch: useWebSearch
+      }, { status: 500 })
     }
   } catch (error: any) {
     if (error?.status === 429) {
