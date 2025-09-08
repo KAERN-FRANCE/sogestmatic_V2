@@ -19,10 +19,11 @@ NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=votre_sender_id
 NEXT_PUBLIC_FIREBASE_APP_ID=votre_app_id
 ```
 
-### 3. Configuration Tavily (pour la recherche web - OPTIONNEL)
+### 3. Configuration Tavily (pour les indicateurs sociaux - OPTIONNEL)
 ```
 TAVILY_API_KEY=tvly-dev-votre_cle_tavily
 ```
+**Note :** Tavily n'est PAS utilisé par l'IA principale. Il sert uniquement à enrichir les indicateurs sociaux (SMIC, etc.). L'IA utilise l'outil `web_search` natif d'OpenAI.
 
 ### 4. Configuration RAG (OPTIONNEL)
 ```
@@ -56,7 +57,7 @@ Cette page vous montrera :
 - [ ] `OPENAI_API_KEY` configurée
 - [ ] `MODEL=gpt-5-mini` configuré
 - [ ] Variables Firebase configurées
-- [ ] `TAVILY_API_KEY` configurée (pour recherche web)
+- [ ] `TAVILY_API_KEY` configurée (pour indicateurs sociaux - optionnel)
 - [ ] Application redéployée
 - [ ] Test via `/api/debug`
 
@@ -67,8 +68,9 @@ Cette page vous montrera :
 - Redéployer après modification des variables
 
 ### La recherche web ne fonctionne pas
-- Vérifier que `TAVILY_API_KEY` est configurée
+- L'IA utilise l'outil `web_search` natif d'OpenAI (pas Tavily)
 - Vérifier que `useWebSearch=true` est envoyé dans les requêtes
+- Tavily n'est PAS nécessaire pour l'IA principale
 
 ### Erreurs d'authentification
 - Vérifier que `OPENAI_API_KEY` est correcte
