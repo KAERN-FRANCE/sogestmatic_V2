@@ -570,27 +570,27 @@ export default function ChatbotPage() {
                     )}
                   </div>
                 </div>
-                <div className="flex items-center space-x-1 opacity-60 group-hover:opacity-100 transition-opacity">
+                <div className="flex items-center space-x-1">
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
                     onClick={(e) => {
                       e.stopPropagation()
                       generateShareLink(conversation.id)
                     }}
-                    className="h-7 w-7 p-0 text-muted-foreground hover:text-green-accent hover:bg-green-accent/10"
+                    className="h-8 w-8 p-0 text-green-accent border-green-accent/30 hover:bg-green-accent hover:text-white"
                     title="Partager cette conversation"
                   >
                     <Share2 className="w-4 h-4" />
                   </Button>
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
                     onClick={(e) => {
                       e.stopPropagation()
                       deleteConversation(conversation.id)
                     }}
-                    className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                    className="h-8 w-8 p-0 text-red-500 border-red-500/30 hover:bg-red-500 hover:text-white"
                     title="Supprimer cette conversation"
                   >
                     <Trash2 className="w-4 h-4" />
