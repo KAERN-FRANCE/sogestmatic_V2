@@ -550,7 +550,7 @@ export default function ChatbotPage() {
               filteredConversations.map((conversation) => (
               <div
                 key={conversation.id}
-                className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${
+                className={`group flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${
                   currentConversationId === conversation.id 
                     ? 'bg-primary/10 border border-primary/30' 
                     : 'hover:bg-secondary/50'
@@ -570,7 +570,7 @@ export default function ChatbotPage() {
                     )}
                   </div>
                 </div>
-                <div className="flex items-center space-x-1">
+                <div className="flex items-center space-x-1 opacity-60 group-hover:opacity-100 transition-opacity">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -578,10 +578,10 @@ export default function ChatbotPage() {
                       e.stopPropagation()
                       generateShareLink(conversation.id)
                     }}
-                    className="h-6 w-6 p-0 text-muted-foreground hover:text-green-accent"
+                    className="h-7 w-7 p-0 text-muted-foreground hover:text-green-accent hover:bg-green-accent/10"
                     title="Partager cette conversation"
                   >
-                    <Share2 className="w-3 h-3" />
+                    <Share2 className="w-4 h-4" />
                   </Button>
                   <Button
                     variant="ghost"
@@ -590,10 +590,10 @@ export default function ChatbotPage() {
                       e.stopPropagation()
                       deleteConversation(conversation.id)
                     }}
-                    className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+                    className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                     title="Supprimer cette conversation"
                   >
-                    <Trash2 className="w-3 h-3" />
+                    <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
