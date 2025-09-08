@@ -286,9 +286,20 @@ export default function ChatbotPage() {
     setLimitError(null)
     const userMessage: Message = { who: 'user', html: renderMessageHTML(text), text: text }
     
+    // Trouver la conversation actuelle AVANT de la modifier
+    const currentConversation = conversations.find(c => c.id === currentConversationId)
+    if (!currentConversation) return
+    
+    // Créer la conversation mise à jour avec le message utilisateur
+    const conversationWithUserMessage = {
+      ...currentConversation,
+      messages: [...currentConversation.messages, userMessage]
+    }
+    
+    // Mettre à jour l'état local
     setConversations(prev => prev.map(c => 
       c.id === currentConversationId 
-        ? { ...c, messages: [...c.messages, userMessage] }
+        ? conversationWithUserMessage
         : c
     ))
     
@@ -296,11 +307,8 @@ export default function ChatbotPage() {
     setBusy(true)
     
     try {
-      // Préparer l'historique des messages pour l'IA
-      const conversation = conversations.find(c => c.id === currentConversationId)
-      if (!conversation) return
-      
-      const messageHistory = conversation.messages.map(m => `${m.who === 'user' ? 'Utilisateur' : 'Assistant'}: ${m.text}`).join('\n') || ''
+      // Préparer l'historique des messages pour l'IA (incluant le message utilisateur)
+      const messageHistory = conversationWithUserMessage.messages.map(m => `${m.who === 'user' ? 'Utilisateur' : 'Assistant'}: ${m.text}`).join('\n') || ''
       
       const res = await fetch('/api/ai', { 
         method: 'POST', 
@@ -321,8 +329,8 @@ export default function ChatbotPage() {
         }
         
         const updatedConversation = {
-          ...conversation,
-          messages: [...conversation.messages, errorMessage]
+          ...conversationWithUserMessage,
+          messages: [...conversationWithUserMessage.messages, errorMessage]
         }
         
         setConversations(prev => prev.map(c => 
@@ -339,8 +347,8 @@ export default function ChatbotPage() {
         const botMessage: Message = { who: 'bot', html: renderMessageHTML(reply), text: reply }
         
         const updatedConversation = {
-          ...conversation,
-          messages: [...conversation.messages, botMessage]
+          ...conversationWithUserMessage,
+          messages: [...conversationWithUserMessage.messages, botMessage]
         }
         
         setConversations(prev => prev.map(c => 
@@ -362,7 +370,7 @@ export default function ChatbotPage() {
         setMessageLimitStatus(newStatus)
         
         // Générer un titre intelligent si c'est le premier message de la conversation
-        if (conversation.messages.length === 0) {
+        if (conversationWithUserMessage.messages.length === 1) { // Changé de 0 à 1 car on a maintenant le message utilisateur
           setGeneratingTitle(currentConversationId)
           
           try {
@@ -389,9 +397,6 @@ export default function ChatbotPage() {
         }
       }
     } catch {
-      const conversation = conversations.find(c => c.id === currentConversationId)
-      if (!conversation) return
-      
       const errorMessage: Message = { 
         who: 'bot', 
         html: renderMessageHTML('Erreur serveur'),
@@ -399,8 +404,8 @@ export default function ChatbotPage() {
       }
       
       const updatedConversation = {
-        ...conversation,
-        messages: [...conversation.messages, errorMessage]
+        ...conversationWithUserMessage,
+        messages: [...conversationWithUserMessage.messages, errorMessage]
       }
       
       setConversations(prev => prev.map(c => 

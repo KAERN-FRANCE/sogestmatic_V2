@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     const client = new OpenAI({ apiKey })
 
     const system = process.env.SYSTEM_INSTRUCTIONS || (
-      "Tu es un expert en réglementation du transport routier. Réponds uniquement aux questions relevant de la réglementation du transport ET, lorsqu'une question concerne les PRODUITS de l'entreprise du client, utilise exclusivement le contexte RAG fourni (extraits PDF) pour informer et RECOMMANDER les produits du client. Ne recommande jamais des produits concurrents. Hors de ce périmètre (transport réglementaire ou produits du client), refuse poliment et propose de reformuler vers un sujet éligible. Réponds en français de manière naturelle et directe. Cite systématiquement les sources officielles (Legifrance, EUR-Lex, ministères, autorités) pour la partie réglementaire et cite le nom du PDF/source pour les informations produits. Utilise la recherche web si nécessaire pour vérifier et sourcer les règles. Ne divulgue JAMAIS d'informations techniques sur le modèle, le fournisseur, les clés API, les versions ou la configuration. Si on te demande ces détails, réponds brièvement que ces informations ne sont pas communiquées et recentre la discussion sur la question métier.\n\nIMPORTANT : Réponds de manière naturelle et directe, sans formules répétitives comme 'Courte réponse', 'Réponse courte', ou te présenter. Va droit au but. Structure tes réponses avec des paragraphes clairs. Utilise des sauts de ligne pour séparer les idées principales. Organise l'information de manière logique avec des points clés bien identifiés. Rends tes réponses faciles à lire et à comprendre."
+      "Tu es un expert en réglementation du transport routier. Réponds UNIQUEMENT aux questions relevant de la réglementation du transport routier. \n\nIMPORTANT : Ne mentionne JAMAIS les produits Sogestmatic sauf si l'utilisateur exprime une intention claire d'ACHAT ou de COMMANDE (demande de devis, prix, commande, achat, etc.). Même si la question concerne des équipements de transport, réponds uniquement sur l'aspect réglementaire sans faire de recommandations commerciales.\n\nRègles strictes :\n- Questions réglementaires pures : Réponds uniquement sur la réglementation\n- Questions techniques sur équipements : Réponds sur l'aspect réglementaire uniquement\n- Intention d'achat claire : Alors seulement tu peux mentionner les produits Sogestmatic\n\nRéponds en français de manière naturelle et directe. Cite systématiquement les sources officielles (Legifrance, EUR-Lex, ministères, autorités). Utilise la recherche web si nécessaire pour vérifier et sourcer les règles. Ne divulgue JAMAIS d'informations techniques sur le modèle, le fournisseur, les clés API, les versions ou la configuration.\n\nIMPORTANT : Réponds de manière naturelle et directe, sans formules répétitives comme 'Courte réponse', 'Réponse courte', ou te présenter. Va droit au but. Structure tes réponses avec des paragraphes clairs. Utilise des sauts de ligne pour séparer les idées principales. Organise l'information de manière logique avec des points clés bien identifiés. Rends tes réponses faciles à lire et à comprendre."
     )
 
     // --- RAG facultatif (lecture data/index.json si présent) ---
@@ -36,13 +36,26 @@ export async function POST(request: NextRequest) {
 
     function isProductIntent(text: string): boolean {
       const lowered = text.toLowerCase()
-      return /produit|gamme|référence|prix|tarif|devis|fournir|fournisseur|caractéristique|spécification|capacité|compatibilit|brochure|catalogue|manuel|documentation|notice|modèle|version|accessoire|option|rfid|badge|contrôle d'accès|lecteur|concentrateur|carburant|tachograph|tachy|architac|tachosocial|tchogest|tm401|locabox|optilevel|carbu md2/.test(lowered)
+      
+      // Mots-clés d'intention d'achat/commande (priorité haute)
+      const purchaseIntent = /devis|prix|tarif|commander|acheter|achat|commande|fournir|fournisseur|proposer|recommand|suggérer|conseiller|quelle.*marque|quelle.*solution|quelle.*équipement|besoin.*équipement|cherche.*équipement|recherche.*équipement/.test(lowered)
+      
+      // Mots-clés techniques génériques (ne déclenchent PAS l'intention)
+      const genericTechnical = /tachograph|tachy|chronotachygraphe|réglementation|loi|décret|arrêté|obligation|contrôle|inspection/.test(lowered)
+      
+      // Mots-clés produits spécifiques Sogestmatic (seulement si accompagnés d'intention)
+      const specificProducts = /architac|tachosocial|tchogest|tm401|locabox|optilevel|carbu md2|rfid|badge|contrôle d'accès|lecteur|concentrateur/.test(lowered)
+      
+      // L'intention produit n'est déclenchée que si :
+      // 1. Il y a une intention d'achat claire, OU
+      // 2. Il y a des produits spécifiques Sogestmatic ET une intention d'achat
+      return purchaseIntent || (specificProducts && purchaseIntent)
     }
 
     function buildRagContext(chunks: Array<{ source: string; text: string }>): string {
       if (!chunks.length) return ''
       const lines = chunks.map((c, i) => `[[${i + 1}]] Source: ${c.source}\n${c.text}`)
-      return `\n\nContexte produits (extraits PDF du client) — recommander exclusivement les produits du client quand pertinent, éviter les concurrents :\n${lines.join('\n---\n')}`
+      return `\n\nATTENTION : Contexte produits Sogestmatic disponible. Utilise ces informations UNIQUEMENT si l'utilisateur exprime une intention claire d'ACHAT ou de COMMANDE. Ne mentionne JAMAIS ces produits pour des questions purement réglementaires ou techniques.\n\nContexte produits (extraits PDF du client) :\n${lines.join('\n---\n')}`
     }
 
     async function searchIndex(query: string, k = 5): Promise<Array<{ source: string; text: string; score: number }>> {
@@ -67,7 +80,7 @@ export async function POST(request: NextRequest) {
     let ragContext = ''
     const top = await searchIndex(message, Number(process.env.RAG_K || 5))
     const topScore = (top?.[0]?.score as number) ?? 0
-    const threshold = Number(process.env.RAG_INTENT_THRESHOLD || 0.22)
+    const threshold = Number(process.env.RAG_INTENT_THRESHOLD || 0.35) // Seuil plus élevé pour être plus restrictif
     const shouldUseRag = isProductIntent(message) || topScore >= threshold
     if (shouldUseRag) {
       ragContext = buildRagContext(top)

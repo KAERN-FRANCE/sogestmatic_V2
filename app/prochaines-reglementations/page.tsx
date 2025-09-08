@@ -18,20 +18,6 @@ type Regulation = {
 
 const REGULATIONS: Regulation[] = [
   {
-    id: "chrono-v2",
-    category: "Chronotachygraphe",
-    scope: "France",
-    title: "Tachygraphe intelligent 2e génération - Échéance finale",
-    summary: "Remplacement obligatoire des tachygraphes V1 par V2 pour tous les véhicules >3,5t en transport international. Les VUL >2,5t en international doivent s'équiper au plus tard le 1er juillet 2026.",
-    deadline: "18 août 2025",
-    urgency: "Critique",
-    impact: "Obligatoire pour continuer l'activité internationale",
-    sources: [
-      { label: "ecologie.gouv.fr", href: "https://www.ecologie.gouv.fr/" },
-      { label: "chronoservices.fr", href: "https://www.chronoservices.fr/" }
-    ]
-  },
-  {
     id: "euro7",
     category: "Environnement",
     scope: "UE",
@@ -43,20 +29,6 @@ const REGULATIONS: Regulation[] = [
     sources: [
       { label: "eur-lex.europa.eu", href: "https://eur-lex.europa.eu/" },
       { label: "consilium.europa.eu", href: "https://www.consilium.europa.eu/" }
-    ]
-  },
-  {
-    id: "zfe-2025",
-    category: "Environnement",
-    scope: "France",
-    title: "ZFE-m : Interdiction Crit'Air 3",
-    summary: "Interdiction des véhicules Crit'Air 3 dans les ZFE de Paris et Lyon à partir du 1er janvier 2025. Dispositifs transitoires et dérogations possibles selon les cas.",
-    deadline: "1er janvier 2025",
-    urgency: "Critique",
-    impact: "Restriction d'accès aux centres urbains",
-    sources: [
-      { label: "paris.fr", href: "https://www.paris.fr/" },
-      { label: "grandlyon.com", href: "https://www.grandlyon.com/" }
     ]
   },
   {
@@ -74,20 +46,6 @@ const REGULATIONS: Regulation[] = [
     ]
   },
   {
-    id: "malus-2025",
-    category: "Fiscalité",
-    scope: "France",
-    title: "Malus écologique renforcé",
-    summary: "Seuil CO2 abaissé à 113 g/km avec malus maximum de 70 000€ pour les véhicules ≥192 g/km. Nouveaux seuils encore renforcés en 2026.",
-    deadline: "1er mars 2025",
-    urgency: "Important",
-    impact: "Coût d'acquisition des véhicules",
-    sources: [
-      { label: "service-public.fr", href: "https://www.service-public.fr/" },
-      { label: "ecologie.gouv.fr", href: "https://www.ecologie.gouv.fr/" }
-    ]
-  },
-  {
     id: "eco-redevance-alsace",
     category: "Fiscalité",
     scope: "France",
@@ -101,48 +59,6 @@ const REGULATIONS: Regulation[] = [
       { label: "francebleu.fr", href: "https://www.francebleu.fr/" }
     ]
   },
-  {
-    id: "repos-compensateur",
-    category: "Social",
-    scope: "France/UE",
-    title: "Repos compensateur obligatoire",
-    summary: "Obligation de repos compensateur pour les conducteurs effectuant des dépassements de temps de conduite. Calcul et attribution selon la réglementation sociale européenne.",
-    deadline: "En vigueur",
-    urgency: "Important",
-    impact: "Gestion des équipes et coûts sociaux",
-    sources: [
-      { label: "legifrance.gouv.fr", href: "https://www.legifrance.gouv.fr/" },
-      { label: "transport.ec.europa.eu", href: "https://transport.ec.europa.eu/" }
-    ]
-  },
-  {
-    id: "formation-continue",
-    category: "Sécurité",
-    scope: "France",
-    title: "Formation continue conducteurs",
-    summary: "Obligation de formation continue pour les conducteurs professionnels. 35 heures de formation tous les 5 ans pour maintenir la qualification professionnelle.",
-    deadline: "En vigueur",
-    urgency: "Modéré",
-    impact: "Coût formation et organisation",
-    sources: [
-      { label: "service-public.fr", href: "https://www.service-public.fr/" },
-      { label: "fimo.ants.gouv.fr", href: "https://fimo.ants.gouv.fr/" }
-    ]
-  },
-  {
-    id: "equipements-securite",
-    category: "Sécurité",
-    scope: "UE",
-    title: "Équipements de sécurité obligatoires",
-    summary: "Nouveaux équipements de sécurité obligatoires : assistance au maintien de voie, freinage d'urgence, détection de somnolence pour les véhicules neufs.",
-    deadline: "2024-2026",
-    urgency: "Modéré",
-    impact: "Coût d'équipement des véhicules",
-    sources: [
-      { label: "eur-lex.europa.eu", href: "https://eur-lex.europa.eu/" },
-      { label: "consilium.europa.eu", href: "https://www.consilium.europa.eu/" }
-    ]
-  }
 ]
 
 const getCategoryIcon = (category: string) => {
@@ -191,7 +107,7 @@ export default function ProchainesReglementationsPage() {
         <div className="space-y-8">
           {/* Header */}
           <div className="text-center space-y-4">
-            <h1 className="text-3xl lg:text-4xl font-bold text-foreground">Prochaines Réglementations</h1>
+            <h1 className="text-3xl lg:text-4xl font-bold text-foreground">Veille transport</h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
               Veille réglementaire transport routier - France et Union Européenne
             </p>

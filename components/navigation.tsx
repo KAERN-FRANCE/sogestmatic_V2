@@ -13,8 +13,9 @@ export function Navigation() {
 
   const navLinks = [
     { href: "/", label: "Accueil" },
-    { href: "/prochaines-reglementations", label: "Prochaine Réglementation" },
+    { href: "/chatbot", label: "Assistant IA" },
     { href: "/indicateurs-indemnites", label: "Indicateurs & Indemnités" },
+    { href: "/prochaines-reglementations", label: "Veille transport" },
     { href: "/livre-blanc", label: "Livre Blanc" },
     { href: "/compte", label: "Mon Compte" },
   ]
@@ -28,7 +29,7 @@ export function Navigation() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
           <div className="flex items-center space-x-3">
-            <Link href="/" className="relative h-20 p-2 hover:opacity-80 transition-opacity w-40">
+            <Link href="https://www.sogestmatic.com" className="relative h-20 p-2 hover:opacity-80 transition-opacity w-40">
               <Image
                 src="/sogestmatic-logo.png"
                 alt="Sogestmatic Logo"
@@ -50,13 +51,6 @@ export function Navigation() {
                 {link.label}
               </Link>
             ))}
-            
-            {/* Bouton Accéder à l'IA */}
-            <Link href="/chatbot">
-              <Button className="bg-green-accent hover:bg-green-accent-dark text-white font-medium">
-                Accéder à l'IA
-              </Button>
-            </Link>
           </div>
 
           {/* Mobile menu button */}
@@ -86,13 +80,6 @@ export function Navigation() {
                   {link.label}
                 </Link>
               ))}
-              
-              {/* Bouton Accéder à l'IA pour mobile */}
-              <Link href="/chatbot" onClick={() => setIsMenuOpen(false)}>
-                <Button className="w-full bg-green-accent hover:bg-green-accent-dark text-white font-medium">
-                  Accéder à l'IA
-                </Button>
-              </Link>
             </div>
           </div>
         )}
