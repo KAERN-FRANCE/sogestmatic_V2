@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Plus, MessageSquare, Trash2, Send, Lock, AlertCircle } from "lucide-react"
+import { TypingIndicator } from "@/components/ui/typing-indicator"
 import { useAuth } from "@/hooks/use-auth"
 import { useRouter } from "next/navigation"
 import { initializeApp } from "firebase/app"
@@ -118,6 +119,7 @@ export default function ChatbotPage() {
     isUnlimited: boolean
   } | null>(null)
   const [limitError, setLimitError] = useState<string | null>(null)
+  const scrollAreaRef = useRef<HTMLDivElement>(null)
 
   const currentConversation = conversations.find(c => c.id === currentConversationId)
   const messageLimitService = MessageLimitService.getInstance()
@@ -128,6 +130,16 @@ export default function ChatbotPage() {
       router.push('/compte')
     }
   }, [user, isLoading, router])
+
+  // Auto-scroll vers le bas quand l'IA commence à réfléchir
+  useEffect(() => {
+    if (busy && scrollAreaRef.current) {
+      const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]')
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight
+      }
+    }
+  }, [busy])
 
   // Charger les conversations depuis Firebase
   useEffect(() => {
@@ -546,7 +558,7 @@ export default function ChatbotPage() {
           <>
             {/* Zone des messages - hauteur fixe avec scroll */}
             <div className="flex-1 overflow-hidden">
-              <ScrollArea className="h-full p-4">
+              <ScrollArea ref={scrollAreaRef} className="h-full p-4">
                 <div className="max-w-4xl mx-auto space-y-4">
                   {currentConversation.messages.map((message, index) => (
                     <div
@@ -563,6 +575,15 @@ export default function ChatbotPage() {
                       />
                     </div>
                   ))}
+                  
+                  {/* Animation de chargement quand l'IA réfléchit */}
+                  {busy && (
+                    <div className="flex justify-start">
+                      <div className="max-w-[80%] rounded-lg px-3 py-2 bg-secondary text-foreground border border-border">
+                        <TypingIndicator />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </ScrollArea>
             </div>
@@ -598,7 +619,11 @@ export default function ChatbotPage() {
                     disabled={busy || !input.trim() || !!(messageLimitStatus && !messageLimitStatus.isUnlimited && messageLimitStatus.remaining <= 0)} 
                     className="bg-green-accent hover:bg-green-accent-dark text-white h-10 w-10 p-0"
                   >
-                    <Send className="w-4 h-4" />
+                    {busy ? (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <Send className="w-4 h-4" />
+                    )}
                   </Button>
                 </div>
 
