@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { ExternalLink, FileText, Clock, Users, Shield, Truck, Database, Archive, BarChart3, Settings } from "lucide-react"
+import { ExternalLink, FileText, Clock, Users, Shield, Truck, Database, Archive, BarChart3, Settings, Download } from "lucide-react"
 
 export const metadata: Metadata = {
   title: "Livre Blanc - Gestion du Chronotachygraphe | Sogestmatic",
@@ -184,25 +184,38 @@ export default function LivreBlancPage() {
                   Guide complet
                 </div>
                 <div className="flex items-center">
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  Accès direct
+                  <Download className="h-4 w-4 mr-2" />
+                  Téléchargement PDF
                 </div>
                 <div className="flex items-center">
                   <Clock className="h-4 w-4 mr-2" />
                   40 ans d'expérience
                 </div>
               </div>
-              <Button 
-                size="lg" 
-                variant="secondary" 
-                className="bg-white text-primary hover:bg-white/90"
-                asChild
-              >
-                <a href="https://chrono.sogestmatic.com/livre-blanc-gestion-chronotachygraphe" target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="mr-2 h-5 w-5" />
-                  Consulter le Livre Blanc
-                </a>
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                <Button 
+                  size="lg" 
+                  variant="secondary" 
+                  className="bg-white text-primary hover:bg-white/90"
+                  asChild
+                >
+                  <a href="/livre-blanc-sogestmatic.pdf" download="Livre-Blanc-Gestion-Chronotachygraphe-Sogestmatic.pdf">
+                    <Download className="mr-2 h-5 w-5" />
+                    Télécharger le PDF
+                  </a>
+                </Button>
+                <Button 
+                  size="lg" 
+                  variant="outline" 
+                  className="bg-transparent border-white text-white hover:bg-white/10"
+                  asChild
+                >
+                  <a href="https://chrono.sogestmatic.com/livre-blanc-gestion-chronotachygraphe" target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="mr-2 h-5 w-5" />
+                    Consulter en ligne
+                  </a>
+                </Button>
+              </div>
               <p className="text-sm text-primary-foreground/70">Accès gratuit • Expertise Sogestmatic • Solutions pratiques</p>
             </div>
           </CardContent>
