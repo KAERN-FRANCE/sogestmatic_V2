@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Input } from "@/components/ui/input"
-import { Plus, MessageSquare, Trash2, Send, Lock, AlertCircle, Search, Share2, Copy, X, Edit2, ChevronLeft, ChevronRight } from "lucide-react"
+import { Plus, MessageSquare, Trash2, Send, Lock, AlertCircle, Search, Share2, X, Edit2, ChevronLeft, ChevronRight } from "lucide-react"
 import { TypingIndicator } from "@/components/ui/typing-indicator"
 import { useAuth } from "@/hooks/use-auth"
 import { useRouter } from "next/navigation"
@@ -121,8 +121,6 @@ export default function ChatbotPage() {
   } | null>(null)
   const [limitError, setLimitError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
-  const [showShareModal, setShowShareModal] = useState(false)
-  const [shareUrl, setShareUrl] = useState("")
   const [editingTitle, setEditingTitle] = useState<string | null>(null)
   const [newTitle, setNewTitle] = useState("")
   const [sidebarWidth, setSidebarWidth] = useState(600) // Largeur par défaut encore plus grande
@@ -178,23 +176,82 @@ export default function ChatbotPage() {
     }
   }, [busy])
 
-  // Fonction pour générer un lien de partage
-  const generateShareLink = (conversationId: string) => {
-    const baseUrl = window.location.origin
-    const shareUrl = `${baseUrl}/chatbot?share=${conversationId}`
-    setShareUrl(shareUrl)
-    setShowShareModal(true)
-  }
+  // Fonction pour générer un PDF et l'envoyer par email
+  const generateShareLink = async (conversationId: string) => {
+    const conversation = conversations.find(c => c.id === conversationId)
+    if (!conversation) return
 
-  // Fonction pour copier le lien de partage
-  const copyShareLink = async () => {
     try {
-      await navigator.clipboard.writeText(shareUrl)
-      // Optionnel: afficher une notification de succès
-    } catch (err) {
-      console.error('Erreur lors de la copie:', err)
+      // Demander l'email de destination
+      const email = prompt("Entrez l'adresse email pour envoyer la conversation :")
+      if (!email) return
+
+      // Générer le PDF de la conversation
+      const pdfContent = await generateConversationPDF(conversation)
+      
+      // Envoyer par email
+      await sendConversationByEmail(conversation, pdfContent, email)
+      
+      alert("Conversation envoyée par email avec succès !")
+    } catch (error) {
+      console.error('Erreur lors de l\'envoi de la conversation:', error)
+      alert("Erreur lors de l'envoi de la conversation. Veuillez réessayer.")
     }
   }
+
+  // Fonction pour générer le PDF de la conversation
+  const generateConversationPDF = async (conversation: Conversation) => {
+    const { jsPDF } = await import('jspdf')
+    const doc = new jsPDF()
+    
+    // Configuration du PDF
+    doc.setFontSize(16)
+    doc.text('Conversation Sogestmatic', 20, 20)
+    doc.setFontSize(12)
+    doc.text(`Titre: ${conversation.title}`, 20, 35)
+    doc.text(`Date: ${new Date(conversation.timestamp).toLocaleDateString('fr-FR')}`, 20, 45)
+    
+    let yPosition = 60
+    
+    // Ajouter chaque message
+    conversation.messages.forEach((message, index) => {
+      if (yPosition > 280) {
+        doc.addPage()
+        yPosition = 20
+      }
+      
+      const sender = message.who === 'user' ? 'Utilisateur' : 'Assistant IA'
+      doc.setFontSize(10)
+      doc.text(`${sender}:`, 20, yPosition)
+      yPosition += 10
+      
+      // Diviser le texte en lignes si nécessaire
+      const lines = doc.splitTextToSize(message.text, 170)
+      doc.text(lines, 20, yPosition)
+      yPosition += lines.length * 5 + 10
+    })
+    
+    return doc.output('blob')
+  }
+
+  // Fonction pour envoyer la conversation par email
+  const sendConversationByEmail = async (conversation: Conversation, pdfBlob: Blob, email: string) => {
+    const formData = new FormData()
+    formData.append('conversationId', conversation.id)
+    formData.append('conversationTitle', conversation.title)
+    formData.append('email', email)
+    formData.append('pdf', pdfBlob, `${conversation.title}.pdf`)
+    
+    const response = await fetch('/api/email/send-conversation', {
+      method: 'POST',
+      body: formData
+    })
+    
+    if (!response.ok) {
+      throw new Error('Erreur lors de l\'envoi de l\'email')
+    }
+  }
+
 
   // Fonction pour commencer le renommage
   const startEditingTitle = (conversationId: string, currentTitle: string) => {
@@ -954,52 +1011,6 @@ export default function ChatbotPage() {
         )}
       </div>
 
-      {/* Modal de partage */}
-      {showShareModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-background border border-border rounded-lg p-6 max-w-md w-full mx-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">Partager la conversation</h3>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowShareModal(false)}
-                className="h-6 w-6 p-0"
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-            
-            <p className="text-sm text-muted-foreground mb-4">
-              Copiez ce lien pour partager cette conversation avec d'autres personnes.
-            </p>
-            
-            <div className="flex items-center space-x-2 mb-4">
-              <Input
-                value={shareUrl}
-                readOnly
-                className="flex-1 text-sm"
-              />
-              <Button
-                onClick={copyShareLink}
-                size="sm"
-                className="bg-green-accent hover:bg-green-accent-dark text-white"
-              >
-                <Copy className="w-4 h-4" />
-              </Button>
-            </div>
-            
-            <div className="flex justify-end space-x-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowShareModal(false)}
-              >
-                Fermer
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
