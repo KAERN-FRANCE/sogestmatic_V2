@@ -41,24 +41,7 @@ export default function AdminPage() {
   const { user } = useAuth()
   const [newSource, setNewSource] = useState({ title: "", url: "", category: "" })
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const [pendingSources] = useState([
-    {
-      id: 1,
-      title: "Nouvelle réglementation EU 2024",
-      type: "pdf",
-      url: "regulation-eu-2024.pdf",
-      submittedBy: "user@example.com",
-      date: "2024-01-15",
-    },
-    {
-      id: 2,
-      title: "Mise à jour chronotachygraphe",
-      type: "url",
-      url: "https://transport.gouv.fr/chrono-update",
-      submittedBy: "admin@transport.fr",
-      date: "2024-01-14",
-    },
-  ])
+  const [pendingSources] = useState([])
   const [allUsers, setAllUsers] = useState<AdminUser[]>([])
   const [roleEdits, setRoleEdits] = useState<Record<string, AdminUser["role"]>>({})
   const [durationEdits, setDurationEdits] = useState<Record<string, string>>({})
@@ -403,40 +386,48 @@ export default function AdminPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {pendingSources.map((source) => (
-                      <div key={source.id} className="border rounded-lg p-4 space-y-3">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h4 className="font-semibold flex items-center gap-2">
-                              {source.type === "pdf" ? <Upload className="h-4 w-4" /> : <Link className="h-4 w-4" />}
-                              {source.title}
-                            </h4>
-                            <p className="text-sm text-gray-600">
-                              {source.type === "pdf" ? "Fichier: " : "URL: "}
-                              {source.url}
-                            </p>
-                            <p className="text-sm text-gray-600">
-                              Soumis par {source.submittedBy} le {source.date}
-                            </p>
-                          </div>
-                          <Badge variant="outline">En attente</Badge>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            onClick={() => handleApproveSource(source.id)}
-                            className="bg-green-600 hover:bg-green-700"
-                          >
-                            <Check className="h-4 w-4 mr-1" />
-                            Approuver
-                          </Button>
-                          <Button size="sm" variant="destructive" onClick={() => handleRejectSource(source.id)}>
-                            <X className="h-4 w-4 mr-1" />
-                            Rejeter
-                          </Button>
-                        </div>
+                    {pendingSources.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        <Database className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p className="text-lg font-medium">Aucune source en attente</p>
+                        <p className="text-sm">Les sources soumises par les utilisateurs apparaîtront ici</p>
                       </div>
-                    ))}
+                    ) : (
+                      pendingSources.map((source) => (
+                        <div key={source.id} className="border rounded-lg p-4 space-y-3">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h4 className="font-semibold flex items-center gap-2">
+                                {source.type === "pdf" ? <Upload className="h-4 w-4" /> : <Link className="h-4 w-4" />}
+                                {source.title}
+                              </h4>
+                              <p className="text-sm text-gray-600">
+                                {source.type === "pdf" ? "Fichier: " : "URL: "}
+                                {source.url}
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                Soumis par {source.submittedBy} le {source.date}
+                              </p>
+                            </div>
+                            <Badge variant="outline">En attente</Badge>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => handleApproveSource(source.id)}
+                              className="bg-green-600 hover:bg-green-700"
+                            >
+                              <Check className="h-4 w-4 mr-1" />
+                              Approuver
+                            </Button>
+                            <Button size="sm" variant="destructive" onClick={() => handleRejectSource(source.id)}>
+                              <X className="h-4 w-4 mr-1" />
+                              Rejeter
+                            </Button>
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </CardContent>
               </Card>
