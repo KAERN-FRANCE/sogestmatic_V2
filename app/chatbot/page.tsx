@@ -125,7 +125,7 @@ export default function ChatbotPage() {
   const [shareUrl, setShareUrl] = useState("")
   const [editingTitle, setEditingTitle] = useState<string | null>(null)
   const [newTitle, setNewTitle] = useState("")
-  const [sidebarWidth, setSidebarWidth] = useState(500) // Largeur par défaut plus grande
+  const [sidebarWidth, setSidebarWidth] = useState(600) // Largeur par défaut encore plus grande
   const [isResizing, setIsResizing] = useState(false)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
