@@ -787,39 +787,41 @@ export default function ChatbotPage() {
           </div>
         </ScrollArea>
         
-        <div className="p-4 border-t border-border flex-shrink-0">
-          {!isSidebarCollapsed ? (
-            <>
-              <div className="text-xs text-muted-foreground text-center">
-                {status}
-              </div>
-              {/* Affichage du statut des limites */}
-              {messageLimitStatus && (
-                <div className="mt-2 text-xs text-center">
-                  {messageLimitStatus.isUnlimited ? (
-                    <span className="text-green-600">Messages illimités</span>
-                  ) : (
-                    <span className={`${messageLimitStatus.remaining <= 3 ? 'text-red-600' : 'text-muted-foreground'}`}>
-                      {messageLimitStatus.currentCount}/{messageLimitStatus.limit} messages
-                    </span>
-                  )}
+        <div className="border-t border-border flex-shrink-0">
+          <div className="p-4">
+            {!isSidebarCollapsed ? (
+              <>
+                <div className="text-xs text-muted-foreground text-center">
+                  {status}
                 </div>
-              )}
-              {/* Lien vers les politiques */}
-              <div className="mt-2 text-center">
-                <a href="/politiques" target="_blank" className="text-xs text-muted-foreground hover:text-primary">
-                  Politiques
-                </a>
+                {/* Affichage du statut des limites */}
+                {messageLimitStatus && (
+                  <div className="mt-2 text-xs text-center">
+                    {messageLimitStatus.isUnlimited ? (
+                      <span className="text-green-600">Messages illimités</span>
+                    ) : (
+                      <span className={`${messageLimitStatus.remaining <= 3 ? 'text-red-600' : 'text-muted-foreground'}`}>
+                        {messageLimitStatus.currentCount}/{messageLimitStatus.limit} messages
+                      </span>
+                    )}
+                  </div>
+                )}
+                {/* Lien vers les politiques */}
+                <div className="mt-2 text-center">
+                  <a href="/politiques" target="_blank" className="text-xs text-muted-foreground hover:text-primary">
+                    Politiques
+                  </a>
+                </div>
+              </>
+            ) : (
+              <div className="flex flex-col items-center space-y-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full" title={status}></div>
+                {messageLimitStatus && (
+                  <div className="w-2 h-2 bg-blue-500 rounded-full" title={`${messageLimitStatus.currentCount}/${messageLimitStatus.limit} messages`}></div>
+                )}
               </div>
-            </>
-          ) : (
-            <div className="flex flex-col items-center space-y-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full" title={status}></div>
-              {messageLimitStatus && (
-                <div className="w-2 h-2 bg-blue-500 rounded-full" title={`${messageLimitStatus.currentCount}/${messageLimitStatus.limit} messages`}></div>
-              )}
-            </div>
-          )}
+            )}
+          </div>
         </div>
         
         {/* Bouton de basculement */}
