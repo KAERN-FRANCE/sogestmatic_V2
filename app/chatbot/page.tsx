@@ -787,7 +787,7 @@ export default function ChatbotPage() {
           </div>
         </ScrollArea>
         
-        <div className="p-2 border-t border-border">
+        <div className="p-4 border-t border-border flex-shrink-0">
           {!isSidebarCollapsed ? (
             <>
               <div className="text-xs text-muted-foreground text-center">
