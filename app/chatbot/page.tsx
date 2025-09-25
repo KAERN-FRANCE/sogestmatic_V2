@@ -125,7 +125,7 @@ export default function ChatbotPage() {
   const [shareUrl, setShareUrl] = useState("")
   const [editingTitle, setEditingTitle] = useState<string | null>(null)
   const [newTitle, setNewTitle] = useState("")
-  const [sidebarWidth, setSidebarWidth] = useState(448) // 28rem = 448px
+  const [sidebarWidth, setSidebarWidth] = useState(500) // Largeur par défaut plus grande
   const [isResizing, setIsResizing] = useState(false)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
@@ -245,8 +245,8 @@ export default function ChatbotPage() {
     if (!isResizing) return
     
     const newWidth = e.clientX
-    const minWidth = 300
-    const maxWidth = 600
+    const minWidth = 350
+    const maxWidth = 800
     
     if (newWidth >= minWidth && newWidth <= maxWidth) {
       setSidebarWidth(newWidth)
@@ -692,7 +692,7 @@ export default function ChatbotPage() {
                   <>
                     <div className="flex items-center flex-1 min-w-0 mr-2">
                       <MessageSquare className="w-4 h-4 mr-2 text-muted-foreground flex-shrink-0" />
-                      <div className="flex-1 min-w-0" style={{ maxWidth: `${sidebarWidth - 120}px` }}>
+                      <div className="flex-1 min-w-0" style={{ maxWidth: `${sidebarWidth - 150}px` }}>
                         {editingTitle === conversation.id ? (
                           <div className="flex items-center space-x-2">
                             <Input
