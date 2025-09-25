@@ -692,7 +692,7 @@ export default function ChatbotPage() {
                   <>
                     <div className="flex items-center flex-1 min-w-0 mr-2">
                       <MessageSquare className="w-4 h-4 mr-2 text-muted-foreground flex-shrink-0" />
-                      <div className="flex-1 min-w-0" style={{ maxWidth: `${sidebarWidth - 150}px` }}>
+                      <div className="flex-1 min-w-0" style={{ maxWidth: `${sidebarWidth - 180}px` }}>
                         {editingTitle === conversation.id ? (
                           <div className="flex items-center space-x-2">
                             <Input
@@ -746,13 +746,13 @@ export default function ChatbotPage() {
                       </div>
                     </div>
                     {editingTitle !== conversation.id && (
-                      <div className="flex items-center space-x-1 ml-2 flex-shrink-0">
+                      <div className="flex items-center space-x-1 ml-2 flex-shrink-0 pr-2">
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
                             startEditingTitle(conversation.id, conversation.title)
                           }}
-                          className="h-7 w-7 p-1 bg-blue-100 border border-blue-300 rounded hover:bg-blue-200 flex items-center justify-center"
+                          className="h-6 w-6 p-1 bg-blue-100 border border-blue-300 rounded hover:bg-blue-200 flex items-center justify-center flex-shrink-0"
                           title="Renommer cette conversation"
                         >
                           <Edit2 className="w-3 h-3 text-blue-600" />
@@ -762,7 +762,7 @@ export default function ChatbotPage() {
                             e.stopPropagation()
                             generateShareLink(conversation.id)
                           }}
-                          className="h-7 w-7 p-1 bg-green-100 border border-green-300 rounded hover:bg-green-200 flex items-center justify-center"
+                          className="h-6 w-6 p-1 bg-green-100 border border-green-300 rounded hover:bg-green-200 flex items-center justify-center flex-shrink-0"
                           title="Partager cette conversation"
                         >
                           <Share2 className="w-3 h-3 text-green-600" />
@@ -772,7 +772,7 @@ export default function ChatbotPage() {
                             e.stopPropagation()
                             deleteConversation(conversation.id)
                           }}
-                          className="h-7 w-7 p-1 bg-red-100 border border-red-300 rounded hover:bg-red-200 flex items-center justify-center"
+                          className="h-6 w-6 p-1 bg-red-100 border border-red-300 rounded hover:bg-red-200 flex items-center justify-center flex-shrink-0"
                           title="Supprimer cette conversation"
                         >
                           <Trash2 className="w-3 h-3 text-red-600" />
