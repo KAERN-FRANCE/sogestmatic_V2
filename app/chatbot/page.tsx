@@ -125,7 +125,10 @@ export default function ChatbotPage() {
   const [shareUrl, setShareUrl] = useState("")
   const [editingTitle, setEditingTitle] = useState<string | null>(null)
   const [newTitle, setNewTitle] = useState("")
+  const [sidebarWidth, setSidebarWidth] = useState(448) // 28rem = 448px
+  const [isResizing, setIsResizing] = useState(false)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
+  const sidebarRef = useRef<HTMLDivElement>(null)
 
   const currentConversation = conversations.find(c => c.id === currentConversationId)
   const messageLimitService = MessageLimitService.getInstance()
@@ -137,6 +140,19 @@ export default function ChatbotPage() {
       msg.text.toLowerCase().includes(searchQuery.toLowerCase())
     )
   )
+
+  // Charger la largeur de la sidebar depuis localStorage
+  useEffect(() => {
+    const savedWidth = localStorage.getItem('chatbot-sidebar-width')
+    if (savedWidth) {
+      setSidebarWidth(parseInt(savedWidth))
+    }
+  }, [])
+
+  // Sauvegarder la largeur de la sidebar
+  useEffect(() => {
+    localStorage.setItem('chatbot-sidebar-width', sidebarWidth.toString())
+  }, [sidebarWidth])
 
   // Rediriger si pas connecté
   useEffect(() => {
@@ -206,6 +222,50 @@ export default function ChatbotPage() {
     setEditingTitle(null)
     setNewTitle("")
   }
+
+  // Fonctions de redimensionnement
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault()
+    setIsResizing(true)
+  }
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!isResizing) return
+    
+    const newWidth = e.clientX
+    const minWidth = 300
+    const maxWidth = 600
+    
+    if (newWidth >= minWidth && newWidth <= maxWidth) {
+      setSidebarWidth(newWidth)
+    }
+  }
+
+  const handleMouseUp = () => {
+    setIsResizing(false)
+  }
+
+  // Ajouter les event listeners pour le redimensionnement
+  useEffect(() => {
+    if (isResizing) {
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('mouseup', handleMouseUp)
+      document.body.style.cursor = 'col-resize'
+      document.body.style.userSelect = 'none'
+    } else {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+    }
+  }, [isResizing])
 
   // Charger les conversations depuis Firebase
   useEffect(() => {
@@ -541,7 +601,11 @@ export default function ChatbotPage() {
   return (
     <div className="flex h-[calc(100vh-80px)] bg-background">
       {/* Sidebar - Historique des conversations */}
-      <div className="w-[28rem] bg-secondary/30 border-r border-border flex flex-col">
+      <div 
+        ref={sidebarRef}
+        className="bg-secondary/30 border-r border-border flex flex-col relative"
+        style={{ width: `${sidebarWidth}px` }}
+      >
         <div className="p-3 border-b border-border space-y-3">
           <Button 
             onClick={createNewConversation} 
@@ -595,7 +659,7 @@ export default function ChatbotPage() {
               >
                 <div className="flex items-center flex-1 min-w-0 mr-2">
                   <MessageSquare className="w-4 h-4 mr-2 text-muted-foreground flex-shrink-0" />
-                  <div className="flex-1 min-w-0 max-w-[16rem]">
+                  <div className="flex-1 min-w-0" style={{ maxWidth: `${sidebarWidth - 120}px` }}>
                     {editingTitle === conversation.id ? (
                       <div className="flex items-center space-x-2">
                         <Input
@@ -711,6 +775,13 @@ export default function ChatbotPage() {
             </a>
           </div>
         </div>
+        
+        {/* Poignée de redimensionnement */}
+        <div
+          className="absolute top-0 right-0 w-1 h-full bg-transparent hover:bg-primary/20 cursor-col-resize transition-colors"
+          onMouseDown={handleMouseDown}
+          title="Redimensionner la sidebar"
+        />
       </div>
 
       {/* Zone principale de chat */}
