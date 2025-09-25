@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Input } from "@/components/ui/input"
-import { Plus, MessageSquare, Trash2, Send, Lock, AlertCircle, Search, Share2, Copy, X } from "lucide-react"
+import { Plus, MessageSquare, Trash2, Send, Lock, AlertCircle, Search, Share2, Copy, X, Edit2 } from "lucide-react"
 import { TypingIndicator } from "@/components/ui/typing-indicator"
 import { useAuth } from "@/hooks/use-auth"
 import { useRouter } from "next/navigation"
@@ -123,6 +123,8 @@ export default function ChatbotPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [showShareModal, setShowShareModal] = useState(false)
   const [shareUrl, setShareUrl] = useState("")
+  const [editingTitle, setEditingTitle] = useState<string | null>(null)
+  const [newTitle, setNewTitle] = useState("")
   const scrollAreaRef = useRef<HTMLDivElement>(null)
 
   const currentConversation = conversations.find(c => c.id === currentConversationId)
@@ -169,6 +171,40 @@ export default function ChatbotPage() {
     } catch (err) {
       console.error('Erreur lors de la copie:', err)
     }
+  }
+
+  // Fonction pour commencer le renommage
+  const startEditingTitle = (conversationId: string, currentTitle: string) => {
+    setEditingTitle(conversationId)
+    setNewTitle(currentTitle)
+  }
+
+  // Fonction pour sauvegarder le nouveau titre
+  const saveTitle = async (conversationId: string) => {
+    if (!newTitle.trim()) return
+    
+    try {
+      // Mettre à jour localement
+      setConversations(prev => prev.map(c => 
+        c.id === conversationId 
+          ? { ...c, title: newTitle.trim() }
+          : c
+      ))
+      
+      // Mettre à jour dans Firebase
+      await updateConversation(conversationId, { title: newTitle.trim() })
+      
+      setEditingTitle(null)
+      setNewTitle("")
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour du titre:', error)
+    }
+  }
+
+  // Fonction pour annuler le renommage
+  const cancelEditing = () => {
+    setEditingTitle(null)
+    setNewTitle("")
   }
 
   // Charger les conversations depuis Firebase
@@ -505,7 +541,7 @@ export default function ChatbotPage() {
   return (
     <div className="flex h-[calc(100vh-80px)] bg-background">
       {/* Sidebar - Historique des conversations */}
-      <div className="w-80 bg-secondary/30 border-r border-border flex flex-col">
+      <div className="w-96 bg-secondary/30 border-r border-border flex flex-col">
         <div className="p-3 border-b border-border space-y-3">
           <Button 
             onClick={createNewConversation} 
@@ -550,7 +586,7 @@ export default function ChatbotPage() {
               filteredConversations.map((conversation) => (
               <div
                 key={conversation.id}
-                className={`group flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${
+                className={`group flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
                   currentConversationId === conversation.id 
                     ? 'bg-primary/10 border border-primary/30' 
                     : 'hover:bg-secondary/50'
@@ -559,39 +595,93 @@ export default function ChatbotPage() {
               >
                 <div className="flex items-center flex-1 min-w-0">
                   <MessageSquare className="w-4 h-4 mr-2 text-muted-foreground flex-shrink-0" />
-                  <div className="truncate text-sm">
-                    {generatingTitle === conversation.id ? (
-                      <div className="flex items-center">
-                        <div className="animate-spin rounded-full h-3 w-3 border-b border-green-accent mr-2"></div>
-                        Génération du titre...
+                  <div className="flex-1 min-w-0">
+                    {editingTitle === conversation.id ? (
+                      <div className="flex items-center space-x-2">
+                        <Input
+                          value={newTitle}
+                          onChange={(e) => setNewTitle(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              saveTitle(conversation.id)
+                            } else if (e.key === 'Escape') {
+                              cancelEditing()
+                            }
+                          }}
+                          className="h-6 text-xs"
+                          autoFocus
+                        />
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            saveTitle(conversation.id)
+                          }}
+                          className="h-6 w-6 p-0"
+                        >
+                          ✓
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            cancelEditing()
+                          }}
+                          className="h-6 w-6 p-0"
+                        >
+                          ✕
+                        </Button>
                       </div>
                     ) : (
-                      conversation.title
+                      <div className="truncate text-sm">
+                        {generatingTitle === conversation.id ? (
+                          <div className="flex items-center">
+                            <div className="animate-spin rounded-full h-3 w-3 border-b border-green-accent mr-2"></div>
+                            Génération du titre...
+                          </div>
+                        ) : (
+                          conversation.title
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
-                <div className="flex items-center space-x-1 ml-2">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      generateShareLink(conversation.id)
-                    }}
-                    className="h-8 w-8 p-1 bg-green-100 border border-green-300 rounded hover:bg-green-200 flex items-center justify-center"
-                    title="Partager cette conversation"
-                  >
-                    <Share2 className="w-4 h-4 text-green-600" />
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      deleteConversation(conversation.id)
-                    }}
-                    className="h-8 w-8 p-1 bg-red-100 border border-red-300 rounded hover:bg-red-200 flex items-center justify-center"
-                    title="Supprimer cette conversation"
-                  >
-                    <Trash2 className="w-4 h-4 text-red-600" />
-                  </button>
-                </div>
+                {editingTitle !== conversation.id && (
+                  <div className="flex items-center space-x-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        startEditingTitle(conversation.id, conversation.title)
+                      }}
+                      className="h-7 w-7 p-1 bg-blue-100 border border-blue-300 rounded hover:bg-blue-200 flex items-center justify-center"
+                      title="Renommer cette conversation"
+                    >
+                      <Edit2 className="w-3 h-3 text-blue-600" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        generateShareLink(conversation.id)
+                      }}
+                      className="h-7 w-7 p-1 bg-green-100 border border-green-300 rounded hover:bg-green-200 flex items-center justify-center"
+                      title="Partager cette conversation"
+                    >
+                      <Share2 className="w-3 h-3 text-green-600" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        deleteConversation(conversation.id)
+                      }}
+                      className="h-7 w-7 p-1 bg-red-100 border border-red-300 rounded hover:bg-red-200 flex items-center justify-center"
+                      title="Supprimer cette conversation"
+                    >
+                      <Trash2 className="w-3 h-3 text-red-600" />
+                    </button>
+                  </div>
+                )}
               </div>
               ))
             )}
