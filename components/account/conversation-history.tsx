@@ -5,8 +5,24 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { MessageSquare, Search, Trash2, ExternalLink } from "lucide-react"
+import { MessageSquare, Search, Trash2, ExternalLink, Loader2 } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
+import { initializeApp } from "firebase/app"
+import { getFirestore, collection, query, where, getDocs, deleteDoc, doc } from "firebase/firestore"
+
+// Configuration Firebase
+const firebaseConfig = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+}
+
+// Initialiser Firebase
+const app = initializeApp(firebaseConfig)
+const db = getFirestore(app)
 
 interface Conversation {
   id: string
@@ -21,16 +37,48 @@ export function ConversationHistory() {
   const { user } = useAuth()
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [searchTerm, setSearchTerm] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
     if (user) {
-      // Load conversations from localStorage
-      const stored = localStorage.getItem(`conversations_${user.id}`)
-      if (stored) {
-        setConversations(JSON.parse(stored))
-      }
+      loadConversationsFromFirebase()
     }
   }, [user])
+
+  const loadConversationsFromFirebase = async () => {
+    if (!user) return
+    
+    setIsLoading(true)
+    try {
+      const conversationsRef = collection(db, 'conversations')
+      const q = query(conversationsRef, where('userId', '==', user.id))
+      const querySnapshot = await getDocs(q)
+      
+      const loadedConversations: Conversation[] = []
+      querySnapshot.forEach((doc) => {
+        const data = doc.data()
+        const messages = data.messages || []
+        const lastMessage = messages.length > 0 ? messages[messages.length - 1].text : "Aucun message"
+        
+        loadedConversations.push({
+          id: doc.id,
+          title: data.title || "Conversation sans titre",
+          lastMessage: lastMessage,
+          messageCount: messages.length,
+          createdAt: data.timestamp?.toDate()?.toISOString() || new Date().toISOString(),
+          updatedAt: data.updatedAt?.toDate()?.toISOString() || new Date().toISOString()
+        })
+      })
+      
+      // Trier par date (plus récent en premier)
+      loadedConversations.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+      setConversations(loadedConversations)
+    } catch (error) {
+      console.error('Erreur lors du chargement des conversations:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const filteredConversations = conversations.filter(
     (conv) =>
@@ -38,22 +86,44 @@ export function ConversationHistory() {
       conv.lastMessage.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
-  const deleteConversation = (id: string) => {
-    const updated = conversations.filter((conv) => conv.id !== id)
-    setConversations(updated)
-    if (user) {
-      localStorage.setItem(`conversations_${user.id}`, JSON.stringify(updated))
+  const deleteConversation = async (id: string) => {
+    try {
+      // Supprimer de Firebase
+      const conversationRef = doc(db, 'conversations', id)
+      await deleteDoc(conversationRef)
+      
+      // Mettre à jour l'état local
+      const updated = conversations.filter((conv) => conv.id !== id)
+      setConversations(updated)
+    } catch (error) {
+      console.error('Erreur lors de la suppression de la conversation:', error)
     }
   }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center">
-          <MessageSquare className="mr-2 h-5 w-5" />
-          Historique des Conversations
-        </CardTitle>
-        <CardDescription>Retrouvez toutes vos conversations avec l'Assistant IA</CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center">
+              <MessageSquare className="mr-2 h-5 w-5" />
+              Historique des Conversations
+            </CardTitle>
+            <CardDescription>Retrouvez toutes vos conversations avec l'Assistant IA</CardDescription>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={loadConversationsFromFirebase}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              "Actualiser"
+            )}
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
@@ -67,7 +137,12 @@ export function ConversationHistory() {
             />
           </div>
 
-          {filteredConversations.length === 0 ? (
+          {isLoading ? (
+            <div className="text-center py-8">
+              <Loader2 className="mx-auto h-8 w-8 animate-spin mb-4" />
+              <p className="text-muted-foreground">Chargement des conversations...</p>
+            </div>
+          ) : filteredConversations.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               {conversations.length === 0 ? (
                 <div>
@@ -99,8 +174,14 @@ export function ConversationHistory() {
                     </p>
                   </div>
                   <div className="flex items-center space-x-2 ml-4">
-                    <Button size="sm" variant="outline">
-                      <ExternalLink className="h-4 w-4" />
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      asChild
+                    >
+                      <a href={`/chatbot?conversation=${conversation.id}`}>
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
                     </Button>
                     <Button
                       size="sm"
