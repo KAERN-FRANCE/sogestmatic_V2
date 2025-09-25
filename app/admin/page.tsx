@@ -589,64 +589,6 @@ export default function AdminPage() {
                 </Card>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Activité récente</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                        <div>
-                          <p className="text-sm font-medium">Nouvelle source ajoutée</p>
-                          <p className="text-xs text-gray-600">Réglementation EU 2024 - il y a 2h</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <div>
-                          <p className="text-sm font-medium">Nouvel abonnement confirmé</p>
-                          <p className="text-xs text-gray-600">Transport Express - il y a 4h</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 p-3 bg-orange-50 rounded-lg">
-                        <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                        <div>
-                          <p className="text-sm font-medium">Pic d'utilisation IA</p>
-                          <p className="text-xs text-gray-600">156 conversations - il y a 6h</p>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Sources les plus consultées</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Réglementation chronotachygraphe</span>
-                        <Badge variant="outline">234 vues</Badge>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Indemnités kilométriques 2024</span>
-                        <Badge variant="outline">189 vues</Badge>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Temps de conduite EU</span>
-                        <Badge variant="outline">156 vues</Badge>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Formation conducteurs</span>
-                        <Badge variant="outline">134 vues</Badge>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
             </TabsContent>
 
             <TabsContent value="usage" className="space-y-6">
