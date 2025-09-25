@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Input } from "@/components/ui/input"
-import { Plus, MessageSquare, Trash2, Send, Lock, AlertCircle, Search, Share2, Copy, X, Edit2 } from "lucide-react"
+import { Plus, MessageSquare, Trash2, Send, Lock, AlertCircle, Search, Share2, Copy, X, Edit2, ChevronLeft, ChevronRight } from "lucide-react"
 import { TypingIndicator } from "@/components/ui/typing-indicator"
 import { useAuth } from "@/hooks/use-auth"
 import { useRouter } from "next/navigation"
@@ -127,6 +127,7 @@ export default function ChatbotPage() {
   const [newTitle, setNewTitle] = useState("")
   const [sidebarWidth, setSidebarWidth] = useState(448) // 28rem = 448px
   const [isResizing, setIsResizing] = useState(false)
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const sidebarRef = useRef<HTMLDivElement>(null)
 
@@ -141,18 +142,24 @@ export default function ChatbotPage() {
     )
   )
 
-  // Charger la largeur de la sidebar depuis localStorage
+  // Charger les préférences de la sidebar depuis localStorage
   useEffect(() => {
     const savedWidth = localStorage.getItem('chatbot-sidebar-width')
+    const savedCollapsed = localStorage.getItem('chatbot-sidebar-collapsed')
+    
     if (savedWidth) {
       setSidebarWidth(parseInt(savedWidth))
     }
+    if (savedCollapsed === 'true') {
+      setIsSidebarCollapsed(true)
+    }
   }, [])
 
-  // Sauvegarder la largeur de la sidebar
+  // Sauvegarder les préférences de la sidebar
   useEffect(() => {
     localStorage.setItem('chatbot-sidebar-width', sidebarWidth.toString())
-  }, [sidebarWidth])
+    localStorage.setItem('chatbot-sidebar-collapsed', isSidebarCollapsed.toString())
+  }, [sidebarWidth, isSidebarCollapsed])
 
   // Rediriger si pas connecté
   useEffect(() => {
@@ -221,6 +228,11 @@ export default function ChatbotPage() {
   const cancelEditing = () => {
     setEditingTitle(null)
     setNewTitle("")
+  }
+
+  // Fonction pour basculer la sidebar
+  const toggleSidebar = () => {
+    setIsSidebarCollapsed(!isSidebarCollapsed)
   }
 
   // Fonctions de redimensionnement
@@ -603,44 +615,58 @@ export default function ChatbotPage() {
       {/* Sidebar - Historique des conversations */}
       <div 
         ref={sidebarRef}
-        className="bg-secondary/30 border-r border-border flex flex-col relative"
-        style={{ width: `${sidebarWidth}px` }}
+        className={`bg-secondary/30 border-r border-border flex flex-col relative transition-all duration-300 ${
+          isSidebarCollapsed ? 'w-12' : ''
+        }`}
+        style={{ width: isSidebarCollapsed ? '48px' : `${sidebarWidth}px` }}
       >
         <div className="p-3 border-b border-border space-y-3">
-          <Button 
-            onClick={createNewConversation} 
-            className="w-full bg-green-accent hover:bg-green-accent-dark text-white h-9"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Nouvelle conversation
-          </Button>
-          
-          {/* Barre de recherche */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Rechercher une conversation..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 h-8 text-sm"
-            />
-            {searchQuery && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSearchQuery("")}
-                className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+          {!isSidebarCollapsed ? (
+            <>
+              <Button 
+                onClick={createNewConversation} 
+                className="w-full bg-green-accent hover:bg-green-accent-dark text-white h-9"
               >
-                <X className="w-3 h-3" />
+                <Plus className="w-4 h-4 mr-2" />
+                Nouvelle conversation
               </Button>
-            )}
-          </div>
+              
+              {/* Barre de recherche */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Rechercher une conversation..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 h-8 text-sm"
+                />
+                {searchQuery && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+                  >
+                    <X className="w-3 h-3" />
+                  </Button>
+                )}
+              </div>
+            </>
+          ) : (
+            <Button 
+              onClick={createNewConversation} 
+              className="w-full bg-green-accent hover:bg-green-accent-dark text-white h-9 p-0"
+              title="Nouvelle conversation"
+            >
+              <Plus className="w-4 h-4" />
+            </Button>
+          )}
         </div>
         
         <ScrollArea className="flex-1 p-2">
           <div className="space-y-1">
-            {filteredConversations.length === 0 && searchQuery ? (
+            {!isSidebarCollapsed && filteredConversations.length === 0 && searchQuery ? (
               <div className="text-center py-8 text-muted-foreground">
                 <Search className="w-8 h-8 mx-auto mb-2 opacity-50" />
                 <p className="text-sm">Aucune conversation trouvée</p>
@@ -656,95 +682,104 @@ export default function ChatbotPage() {
                     : 'hover:bg-secondary/50'
                 }`}
                 onClick={() => setCurrentConversationId(conversation.id)}
+                title={isSidebarCollapsed ? conversation.title : undefined}
               >
-                <div className="flex items-center flex-1 min-w-0 mr-2">
-                  <MessageSquare className="w-4 h-4 mr-2 text-muted-foreground flex-shrink-0" />
-                  <div className="flex-1 min-w-0" style={{ maxWidth: `${sidebarWidth - 120}px` }}>
-                    {editingTitle === conversation.id ? (
-                      <div className="flex items-center space-x-2">
-                        <Input
-                          value={newTitle}
-                          onChange={(e) => setNewTitle(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              saveTitle(conversation.id)
-                            } else if (e.key === 'Escape') {
-                              cancelEditing()
-                            }
-                          }}
-                          className="h-6 text-xs"
-                          autoFocus
-                        />
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            saveTitle(conversation.id)
-                          }}
-                          className="h-6 w-6 p-0"
-                        >
-                          ✓
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            cancelEditing()
-                          }}
-                          className="h-6 w-6 p-0"
-                        >
-                          ✕
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="truncate text-sm" title={conversation.title}>
-                        {generatingTitle === conversation.id ? (
-                          <div className="flex items-center">
-                            <div className="animate-spin rounded-full h-3 w-3 border-b border-green-accent mr-2"></div>
-                            Génération du titre...
+                {isSidebarCollapsed ? (
+                  <div className="flex items-center justify-center w-full">
+                    <MessageSquare className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center flex-1 min-w-0 mr-2">
+                      <MessageSquare className="w-4 h-4 mr-2 text-muted-foreground flex-shrink-0" />
+                      <div className="flex-1 min-w-0" style={{ maxWidth: `${sidebarWidth - 120}px` }}>
+                        {editingTitle === conversation.id ? (
+                          <div className="flex items-center space-x-2">
+                            <Input
+                              value={newTitle}
+                              onChange={(e) => setNewTitle(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  saveTitle(conversation.id)
+                                } else if (e.key === 'Escape') {
+                                  cancelEditing()
+                                }
+                              }}
+                              className="h-6 text-xs"
+                              autoFocus
+                            />
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                saveTitle(conversation.id)
+                              }}
+                              className="h-6 w-6 p-0"
+                            >
+                              ✓
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                cancelEditing()
+                              }}
+                              className="h-6 w-6 p-0"
+                            >
+                              ✕
+                            </Button>
                           </div>
                         ) : (
-                          conversation.title
+                          <div className="truncate text-sm" title={conversation.title}>
+                            {generatingTitle === conversation.id ? (
+                              <div className="flex items-center">
+                                <div className="animate-spin rounded-full h-3 w-3 border-b border-green-accent mr-2"></div>
+                                Génération du titre...
+                              </div>
+                            ) : (
+                              conversation.title
+                            )}
+                          </div>
                         )}
                       </div>
+                    </div>
+                    {editingTitle !== conversation.id && (
+                      <div className="flex items-center space-x-1 ml-2 flex-shrink-0">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            startEditingTitle(conversation.id, conversation.title)
+                          }}
+                          className="h-7 w-7 p-1 bg-blue-100 border border-blue-300 rounded hover:bg-blue-200 flex items-center justify-center"
+                          title="Renommer cette conversation"
+                        >
+                          <Edit2 className="w-3 h-3 text-blue-600" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            generateShareLink(conversation.id)
+                          }}
+                          className="h-7 w-7 p-1 bg-green-100 border border-green-300 rounded hover:bg-green-200 flex items-center justify-center"
+                          title="Partager cette conversation"
+                        >
+                          <Share2 className="w-3 h-3 text-green-600" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            deleteConversation(conversation.id)
+                          }}
+                          className="h-7 w-7 p-1 bg-red-100 border border-red-300 rounded hover:bg-red-200 flex items-center justify-center"
+                          title="Supprimer cette conversation"
+                        >
+                          <Trash2 className="w-3 h-3 text-red-600" />
+                        </button>
+                      </div>
                     )}
-                  </div>
-                </div>
-                {editingTitle !== conversation.id && (
-                  <div className="flex items-center space-x-1 ml-2 flex-shrink-0">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        startEditingTitle(conversation.id, conversation.title)
-                      }}
-                      className="h-7 w-7 p-1 bg-blue-100 border border-blue-300 rounded hover:bg-blue-200 flex items-center justify-center"
-                      title="Renommer cette conversation"
-                    >
-                      <Edit2 className="w-3 h-3 text-blue-600" />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        generateShareLink(conversation.id)
-                      }}
-                      className="h-7 w-7 p-1 bg-green-100 border border-green-300 rounded hover:bg-green-200 flex items-center justify-center"
-                      title="Partager cette conversation"
-                    >
-                      <Share2 className="w-3 h-3 text-green-600" />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        deleteConversation(conversation.id)
-                      }}
-                      className="h-7 w-7 p-1 bg-red-100 border border-red-300 rounded hover:bg-red-200 flex items-center justify-center"
-                      title="Supprimer cette conversation"
-                    >
-                      <Trash2 className="w-3 h-3 text-red-600" />
-                    </button>
-                  </div>
+                  </>
                 )}
               </div>
               ))
@@ -753,35 +788,65 @@ export default function ChatbotPage() {
         </ScrollArea>
         
         <div className="p-2 border-t border-border">
-          <div className="text-xs text-muted-foreground text-center">
-            {status}
-          </div>
-          {/* Affichage du statut des limites */}
-          {messageLimitStatus && (
-            <div className="mt-2 text-xs text-center">
-              {messageLimitStatus.isUnlimited ? (
-                <span className="text-green-600">Messages illimités</span>
-              ) : (
-                <span className={`${messageLimitStatus.remaining <= 3 ? 'text-red-600' : 'text-muted-foreground'}`}>
-                  {messageLimitStatus.currentCount}/{messageLimitStatus.limit} messages
-                </span>
+          {!isSidebarCollapsed ? (
+            <>
+              <div className="text-xs text-muted-foreground text-center">
+                {status}
+              </div>
+              {/* Affichage du statut des limites */}
+              {messageLimitStatus && (
+                <div className="mt-2 text-xs text-center">
+                  {messageLimitStatus.isUnlimited ? (
+                    <span className="text-green-600">Messages illimités</span>
+                  ) : (
+                    <span className={`${messageLimitStatus.remaining <= 3 ? 'text-red-600' : 'text-muted-foreground'}`}>
+                      {messageLimitStatus.currentCount}/{messageLimitStatus.limit} messages
+                    </span>
+                  )}
+                </div>
+              )}
+              {/* Lien vers les politiques */}
+              <div className="mt-2 text-center">
+                <a href="/politiques" target="_blank" className="text-xs text-muted-foreground hover:text-primary">
+                  Politiques
+                </a>
+              </div>
+            </>
+          ) : (
+            <div className="flex flex-col items-center space-y-2">
+              <div className="w-2 h-2 bg-green-500 rounded-full" title={status}></div>
+              {messageLimitStatus && (
+                <div className="w-2 h-2 bg-blue-500 rounded-full" title={`${messageLimitStatus.currentCount}/${messageLimitStatus.limit} messages`}></div>
               )}
             </div>
           )}
-          {/* Lien vers les politiques */}
-          <div className="mt-2 text-center">
-            <a href="/politiques" target="_blank" className="text-xs text-muted-foreground hover:text-primary">
-              Politiques
-            </a>
-          </div>
         </div>
         
-        {/* Poignée de redimensionnement */}
-        <div
-          className="absolute top-0 right-0 w-1 h-full bg-transparent hover:bg-primary/20 cursor-col-resize transition-colors"
-          onMouseDown={handleMouseDown}
-          title="Redimensionner la sidebar"
-        />
+        {/* Bouton de basculement */}
+        <div className="absolute top-1/2 -right-3 transform -translate-y-1/2 z-10">
+          <Button
+            onClick={toggleSidebar}
+            size="sm"
+            variant="outline"
+            className="h-6 w-6 p-0 bg-background border-2 shadow-lg hover:bg-secondary"
+            title={isSidebarCollapsed ? "Ouvrir la sidebar" : "Fermer la sidebar"}
+          >
+            {isSidebarCollapsed ? (
+              <ChevronRight className="w-3 h-3" />
+            ) : (
+              <ChevronLeft className="w-3 h-3" />
+            )}
+          </Button>
+        </div>
+        
+        {/* Poignée de redimensionnement (seulement quand la sidebar est ouverte) */}
+        {!isSidebarCollapsed && (
+          <div
+            className="absolute top-0 right-0 w-1 h-full bg-transparent hover:bg-primary/20 cursor-col-resize transition-colors"
+            onMouseDown={handleMouseDown}
+            title="Redimensionner la sidebar"
+          />
+        )}
       </div>
 
       {/* Zone principale de chat */}
