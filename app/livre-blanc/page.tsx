@@ -178,14 +178,18 @@ export default function LivreBlancPage() {
           </CardHeader>
           <CardContent className="text-center">
             <div className="space-y-4">
-              <div className="flex justify-center space-x-8 text-sm">
+              <div className="flex justify-center space-x-6 text-sm flex-wrap">
                 <div className="flex items-center">
                   <FileText className="h-4 w-4 mr-2" />
-                  Guide complet
+                  Consultation PDF
                 </div>
                 <div className="flex items-center">
                   <Download className="h-4 w-4 mr-2" />
-                  Téléchargement PDF
+                  Téléchargement
+                </div>
+                <div className="flex items-center">
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Site externe
                 </div>
                 <div className="flex items-center">
                   <Clock className="h-4 w-4 mr-2" />
@@ -197,6 +201,17 @@ export default function LivreBlancPage() {
                   size="lg" 
                   variant="secondary" 
                   className="bg-white text-primary hover:bg-white/90"
+                  asChild
+                >
+                  <a href="/livre-blanc-sogestmatic.pdf" target="_blank" rel="noopener noreferrer">
+                    <FileText className="mr-2 h-5 w-5" />
+                    Consulter le PDF
+                  </a>
+                </Button>
+                <Button 
+                  size="lg" 
+                  variant="outline" 
+                  className="bg-transparent border-white text-white hover:bg-white/10"
                   asChild
                 >
                   <a href="/livre-blanc-sogestmatic.pdf" download="Livre-Blanc-Gestion-Chronotachygraphe-Sogestmatic.pdf">
@@ -212,7 +227,7 @@ export default function LivreBlancPage() {
                 >
                   <a href="https://chrono.sogestmatic.com/livre-blanc-gestion-chronotachygraphe" target="_blank" rel="noopener noreferrer">
                     <ExternalLink className="mr-2 h-5 w-5" />
-                    Consulter en ligne
+                    Site Sogestmatic
                   </a>
                 </Button>
               </div>
