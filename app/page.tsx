@@ -38,7 +38,7 @@ export default function HomePage() {
                     <div>
                       <CardTitle className="text-lg text-gray-800">Assistant IA Sogestmatic</CardTitle>
                       <CardDescription className="text-sm text-green-600 font-medium">
-                        GPT-5 • En ligne
+                        En ligne
                       </CardDescription>
                     </div>
                     <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
