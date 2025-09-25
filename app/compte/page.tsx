@@ -6,7 +6,6 @@ import { LoginForm } from "@/components/auth/login-form"
 import { RegisterForm } from "@/components/auth/register-form"
 import { ForgotPasswordForm } from "@/components/auth/forgot-password-form"
 import { ConversationHistory } from "@/components/account/conversation-history"
-import { AdminDrafts } from "@/components/account/admin-drafts"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -446,8 +445,6 @@ export default function ComptePage() {
           </Card>
 
           <ConversationHistory />
-
-          {user.role === "admin" && <AdminDrafts />}
         </div>
       </div>
     </div>
