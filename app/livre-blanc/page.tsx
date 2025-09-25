@@ -233,8 +233,10 @@ export default function LivreBlancPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Button variant="outline" className="w-full bg-transparent">
-                  Voir les Indicateurs
+                <Button variant="outline" className="w-full bg-transparent" asChild>
+                  <a href="/indicateurs-indemnites">
+                    Voir les Indicateurs
+                  </a>
                 </Button>
               </CardContent>
             </Card>
@@ -247,8 +249,10 @@ export default function LivreBlancPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Button variant="outline" className="w-full bg-transparent">
-                  Accéder à l'Assistant
+                <Button variant="outline" className="w-full bg-transparent" asChild>
+                  <a href="/chatbot">
+                    Accéder à l'Assistant
+                  </a>
                 </Button>
               </CardContent>
             </Card>
