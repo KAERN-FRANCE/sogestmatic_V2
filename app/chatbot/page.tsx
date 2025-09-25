@@ -127,7 +127,7 @@ export default function ChatbotPage() {
   const [newTitle, setNewTitle] = useState("")
   const [sidebarWidth, setSidebarWidth] = useState(600) // Largeur par défaut encore plus grande
   const [isResizing, setIsResizing] = useState(false)
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true)
   const [isListening, setIsListening] = useState(false)
   const [speechSupported, setSpeechSupported] = useState(false)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
@@ -152,9 +152,11 @@ export default function ChatbotPage() {
     if (savedWidth) {
       setSidebarWidth(parseInt(savedWidth))
     }
-    if (savedCollapsed === 'true') {
-      setIsSidebarCollapsed(true)
+    // Sidebar fermée par défaut, sauf si l'utilisateur a explicitement choisi de l'ouvrir
+    if (savedCollapsed === 'false') {
+      setIsSidebarCollapsed(false)
     }
+    // Si pas de préférence sauvegardée, garder la valeur par défaut (fermée)
   }, [])
 
   // Sauvegarder les préférences de la sidebar
