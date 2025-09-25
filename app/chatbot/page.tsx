@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Input } from "@/components/ui/input"
-import { Plus, MessageSquare, Trash2, Send, Lock, AlertCircle, Search, Share2, Copy, X, Edit2, ChevronLeft, ChevronRight } from "lucide-react"
+import { Plus, MessageSquare, Trash2, Send, Lock, AlertCircle, Search, Share2, Copy, X, Edit2, ChevronLeft, ChevronRight, Mic, MicOff } from "lucide-react"
 import { TypingIndicator } from "@/components/ui/typing-indicator"
 import { useAuth } from "@/hooks/use-auth"
 import { useRouter } from "next/navigation"
@@ -125,9 +125,11 @@ export default function ChatbotPage() {
   const [shareUrl, setShareUrl] = useState("")
   const [editingTitle, setEditingTitle] = useState<string | null>(null)
   const [newTitle, setNewTitle] = useState("")
-  const [sidebarWidth, setSidebarWidth] = useState(320) // Largeur par défaut réduite
+  const [sidebarWidth, setSidebarWidth] = useState(600) // Largeur par défaut encore plus grande
   const [isResizing, setIsResizing] = useState(false)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+  const [isListening, setIsListening] = useState(false)
+  const [speechSupported, setSpeechSupported] = useState(false)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const sidebarRef = useRef<HTMLDivElement>(null)
 
@@ -167,6 +169,13 @@ export default function ChatbotPage() {
       router.push('/compte')
     }
   }, [user, isLoading, router])
+
+  // Vérifier le support de la reconnaissance vocale
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'webkitSpeechRecognition' in window) {
+      setSpeechSupported(true)
+    }
+  }, [])
 
   // Auto-scroll vers le bas quand l'IA commence à réfléchir
   useEffect(() => {
@@ -230,6 +239,42 @@ export default function ChatbotPage() {
     setNewTitle("")
   }
 
+  // Fonction pour démarrer la reconnaissance vocale
+  const startVoiceInput = () => {
+    if (!speechSupported) return
+
+    const recognition = new (window as any).webkitSpeechRecognition()
+    recognition.continuous = false
+    recognition.interimResults = false
+    recognition.lang = 'fr-FR'
+
+    recognition.onstart = () => {
+      setIsListening(true)
+    }
+
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript
+      setInput(transcript)
+      setIsListening(false)
+    }
+
+    recognition.onerror = (event: any) => {
+      console.error('Erreur de reconnaissance vocale:', event.error)
+      setIsListening(false)
+    }
+
+    recognition.onend = () => {
+      setIsListening(false)
+    }
+
+    recognition.start()
+  }
+
+  // Fonction pour arrêter la reconnaissance vocale
+  const stopVoiceInput = () => {
+    setIsListening(false)
+  }
+
   // Fonction pour basculer la sidebar
   const toggleSidebar = () => {
     setIsSidebarCollapsed(!isSidebarCollapsed)
@@ -245,8 +290,8 @@ export default function ChatbotPage() {
     if (!isResizing) return
     
     const newWidth = e.clientX
-    const minWidth = 280
-    const maxWidth = 500
+    const minWidth = 350
+    const maxWidth = 800
     
     if (newWidth >= minWidth && newWidth <= maxWidth) {
       setSidebarWidth(newWidth)
@@ -692,7 +737,7 @@ export default function ChatbotPage() {
                   <>
                     <div className="flex items-center flex-1 min-w-0 mr-2">
                       <MessageSquare className="w-4 h-4 mr-2 text-muted-foreground flex-shrink-0" />
-                             <div className="flex-1 min-w-0" style={{ maxWidth: `${sidebarWidth - 120}px` }}>
+                      <div className="flex-1 min-w-0" style={{ maxWidth: `${sidebarWidth - 180}px` }}>
                         {editingTitle === conversation.id ? (
                           <div className="flex items-center space-x-2">
                             <Input
@@ -897,6 +942,14 @@ export default function ChatbotPage() {
                     <span className="text-sm text-red-700">{limitError}</span>
                   </div>
                 )}
+
+                {/* Indicateur de dictée vocale */}
+                {isListening && (
+                  <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-2">
+                    <div className="w-4 h-4 bg-blue-500 rounded-full animate-pulse"></div>
+                    <span className="text-sm text-blue-700">🎤 Écoute en cours... Parlez maintenant</span>
+                  </div>
+                )}
                 
                 <div className="flex items-end gap-3">
                   <Textarea
@@ -913,6 +966,27 @@ export default function ChatbotPage() {
                     className="flex-1 resize-none"
                     disabled={!!(messageLimitStatus && !messageLimitStatus.isUnlimited && messageLimitStatus.remaining <= 0)}
                   />
+                  
+                  {/* Bouton de dictée vocale */}
+                  {speechSupported && (
+                    <Button
+                      onClick={isListening ? stopVoiceInput : startVoiceInput}
+                      variant="outline"
+                      className={`h-10 w-10 p-0 ${
+                        isListening 
+                          ? 'bg-red-500 hover:bg-red-600 text-white border-red-500' 
+                          : 'hover:bg-blue-50 border-blue-300'
+                      }`}
+                      title={isListening ? "Arrêter la dictée" : "Dictée vocale"}
+                    >
+                      {isListening ? (
+                        <MicOff className="w-4 h-4" />
+                      ) : (
+                        <Mic className="w-4 h-4" />
+                      )}
+                    </Button>
+                  )}
+                  
                   <Button 
                     onClick={send} 
                     disabled={busy || !input.trim() || !!(messageLimitStatus && !messageLimitStatus.isUnlimited && messageLimitStatus.remaining <= 0)} 
