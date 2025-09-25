@@ -541,7 +541,7 @@ export default function ChatbotPage() {
   return (
     <div className="flex h-[calc(100vh-80px)] bg-background">
       {/* Sidebar - Historique des conversations */}
-      <div className="w-96 bg-secondary/30 border-r border-border flex flex-col">
+      <div className="w-[28rem] bg-secondary/30 border-r border-border flex flex-col">
         <div className="p-3 border-b border-border space-y-3">
           <Button 
             onClick={createNewConversation} 
@@ -593,9 +593,9 @@ export default function ChatbotPage() {
                 }`}
                 onClick={() => setCurrentConversationId(conversation.id)}
               >
-                <div className="flex items-center flex-1 min-w-0">
+                <div className="flex items-center flex-1 min-w-0 mr-2">
                   <MessageSquare className="w-4 h-4 mr-2 text-muted-foreground flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 max-w-[16rem]">
                     {editingTitle === conversation.id ? (
                       <div className="flex items-center space-x-2">
                         <Input
@@ -635,7 +635,7 @@ export default function ChatbotPage() {
                         </Button>
                       </div>
                     ) : (
-                      <div className="truncate text-sm">
+                      <div className="truncate text-sm" title={conversation.title}>
                         {generatingTitle === conversation.id ? (
                           <div className="flex items-center">
                             <div className="animate-spin rounded-full h-3 w-3 border-b border-green-accent mr-2"></div>
@@ -649,7 +649,7 @@ export default function ChatbotPage() {
                   </div>
                 </div>
                 {editingTitle !== conversation.id && (
-                  <div className="flex items-center space-x-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex items-center space-x-1 ml-2 flex-shrink-0">
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
