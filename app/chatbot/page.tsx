@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation"
 import { initializeApp } from "firebase/app"
 import { getFirestore, doc, setDoc, getDoc, updateDoc, deleteDoc, collection, query, where, getDocs } from "firebase/firestore"
 import { MessageLimitService } from "@/lib/message-limits"
+import { renderMarkdownToSafeHtml } from "@/lib/markdown"
 
 // Configuration Firebase
 const firebaseConfig = {
@@ -31,40 +32,11 @@ const db = getFirestore(app)
 type Message = { who: "user" | "bot"; html: string; text: string }
 type Conversation = { id: string; title: string; messages: Message[]; timestamp: Date }
 
-function escapeHtml(str: string) {
-  return String(str ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-}
-
+// Fonction de rendu markdown - utilise markdown-it pour un formatage riche
+// Supporte: titres (# ## ###), gras (**texte**), italique (*texte*),
+// listes (- item), code (`code`), blocs de code (```), liens, etc.
 function renderMessageHTML(text: string) {
-  let out = escapeHtml(text)
-  
-  // Convertir les sauts de ligne en paragraphes
-  out = out.replace(/\n\n+/g, '</p><p>')
-  out = out.replace(/\n/g, '<br>')
-  out = `<p>${out}</p>`
-  
-  // Convertir les listes à puces
-  out = out.replace(/<p>(\s*[-•*]\s+)/g, '<p><ul><li>')
-  out = out.replace(/(\n\s*[-•*]\s+)/g, '</li><li>')
-  out = out.replace(/(<br>\s*[-•*]\s+)/g, '</li><li>')
-  
-  // Fermer les listes
-  out = out.replace(/(<\/li>)(<p>)/g, '$1</ul>$2')
-  
-  // Convertir les liens markdown
-  out = out.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, (_m, label, url) => {
-    return '<a href="' + url + '" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:underline">' + label + '</a>'
-  })
-  
-  // Auto-link des URLs brutes
-  out = out.replace(/(^|[^"'>])(https?:\/\/[^\s<)]+)(?![^<]*>)/g, (_m, p1, url) => {
-    return p1 + '<a href="' + url + '" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:underline">' + url + '</a>'
-  })
-  
-  return out
+  return renderMarkdownToSafeHtml(text)
 }
 
 // Fonction pour générer un titre intelligent avec l'API ChatGPT
@@ -179,15 +151,18 @@ export default function ChatbotPage() {
     }
   }, [])
 
-  // Auto-scroll vers le bas quand l'IA commence à réfléchir
+  // Auto-scroll vers le bas quand l'IA répond ou quand les messages changent
   useEffect(() => {
-    if (busy && scrollAreaRef.current) {
+    if (scrollAreaRef.current) {
       const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]')
       if (scrollContainer) {
-        scrollContainer.scrollTop = scrollContainer.scrollHeight
+        // Utiliser requestAnimationFrame pour un scroll fluide après le rendu
+        requestAnimationFrame(() => {
+          scrollContainer.scrollTop = scrollContainer.scrollHeight
+        })
       }
     }
-  }, [busy])
+  }, [busy, currentConversation?.messages])
 
   // Fonction pour générer un lien de partage
   const generateShareLink = (conversationId: string) => {
@@ -915,7 +890,7 @@ export default function ChatbotPage() {
                         className={`max-w-[80%] rounded-lg px-3 py-2 break-words ${
                           message.who === 'user'
                             ? 'bg-green-accent text-white'
-                            : 'bg-secondary text-foreground border border-border'
+                            : 'bg-secondary text-foreground border border-border markdown-content'
                         }`}
                         dangerouslySetInnerHTML={{ __html: message.html }}
                       />
