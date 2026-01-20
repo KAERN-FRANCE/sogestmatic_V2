@@ -1,6 +1,6 @@
 "use client"
 
-import { initializeApp, getApps, type FirebaseApp } from "firebase/app"
+import { initializeApp, getApps, deleteApp, type FirebaseApp } from "firebase/app"
 import {
   getAuth,
   onAuthStateChanged,
@@ -10,8 +10,9 @@ import {
   signOut,
   updateProfile,
   type User as FirebaseUser,
+  type Auth,
 } from "firebase/auth"
-import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore"
+import { getFirestore, doc, getDoc, setDoc, type Firestore } from "firebase/firestore"
 
 export interface User {
   id: string
@@ -46,83 +47,70 @@ export interface AuthState {
   isLoading: boolean
 }
 
-// Configuration Firebase - chargée depuis l'API au runtime
-let firebaseConfig: {
+interface FirebaseConfig {
   apiKey: string
   authDomain: string
   projectId: string
   storageBucket: string
   messagingSenderId: string
   appId: string
-} | null = null
+}
 
-let useFirebase = false
-let configLoaded = false
+// Singleton instances
 let firebaseApp: FirebaseApp | null = null
+let firebaseAuth: Auth | null = null
+let firebaseDb: Firestore | null = null
+let cachedConfig: { useFirebase: boolean; firebase: FirebaseConfig } | null = null
 
-// Fallback mock users (used when Firebase is not configured)
-const MOCK_USERS = [
-  {
-    id: "1",
-    name: "Admin User",
-    email: "admin@sogestmatic.com",
-    password: "admin123",
-    role: "admin" as const,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "2",
-    name: "Test User",
-    email: "user@test.com",
-    password: "user123",
-    role: "gratuit" as const,
-    createdAt: new Date().toISOString(),
-  },
-]
-
-// Charger la configuration Firebase depuis l'API
-async function loadFirebaseConfig(): Promise<boolean> {
-  if (configLoaded) return useFirebase
+// Fetch config from API
+async function fetchConfig(): Promise<{ useFirebase: boolean; firebase: FirebaseConfig }> {
+  if (cachedConfig) return cachedConfig
 
   try {
-    const response = await fetch('/api/config')
-    if (!response.ok) {
-      configLoaded = true
-      return false
-    }
-
-    const config = await response.json()
-    useFirebase = config.useFirebase === true
-
-    if (useFirebase && config.firebase?.apiKey) {
-      firebaseConfig = config.firebase
-    }
-
-    configLoaded = true
-    return useFirebase && !!firebaseConfig?.apiKey
-  } catch {
-    configLoaded = true
-    return false
+    const res = await fetch('/api/config', { cache: 'no-store' })
+    if (!res.ok) throw new Error('Config fetch failed')
+    cachedConfig = await res.json()
+    return cachedConfig!
+  } catch (error) {
+    console.error('[Auth] Failed to fetch config:', error)
+    return { useFirebase: false, firebase: {} as FirebaseConfig }
   }
 }
 
-function getFirebaseApp(): FirebaseApp {
-  if (firebaseApp) return firebaseApp
-
-  if (!firebaseConfig?.apiKey || !firebaseConfig?.projectId) {
-    throw new Error("Configuration Firebase incomplète")
+// Initialize Firebase with fresh config
+async function initFirebase(): Promise<{ app: FirebaseApp; auth: Auth; db: Firestore } | null> {
+  if (firebaseApp && firebaseAuth && firebaseDb) {
+    return { app: firebaseApp, auth: firebaseAuth, db: firebaseDb }
   }
 
-  if (!getApps().length) {
-    firebaseApp = initializeApp(firebaseConfig)
-  } else {
-    firebaseApp = getApps()[0]!
+  const config = await fetchConfig()
+
+  if (!config.useFirebase || !config.firebase?.apiKey) {
+    console.log('[Auth] Firebase disabled or no API key')
+    return null
   }
 
-  return firebaseApp
+  try {
+    // Clear any existing apps to ensure fresh initialization
+    const existingApps = getApps()
+    for (const app of existingApps) {
+      await deleteApp(app)
+    }
+
+    // Initialize fresh
+    firebaseApp = initializeApp(config.firebase)
+    firebaseAuth = getAuth(firebaseApp)
+    firebaseDb = getFirestore(firebaseApp)
+
+    console.log('[Auth] Firebase initialized successfully')
+    return { app: firebaseApp, auth: firebaseAuth, db: firebaseDb }
+  } catch (error) {
+    console.error('[Auth] Firebase initialization error:', error)
+    return null
+  }
 }
 
-// Remove all undefined values recursively so Firestore accepts the payload
+// Sanitize objects for Firestore (remove undefined values)
 function sanitizeForFirestore<T>(value: T): T {
   if (Array.isArray(value)) {
     return value.map((v) => sanitizeForFirestore(v)) as unknown as T
@@ -138,11 +126,41 @@ function sanitizeForFirestore<T>(value: T): T {
   return value
 }
 
+// Translate Firebase error codes to French
+function translateFirebaseError(error: { code?: string; message?: string }, isLogin: boolean): string {
+  const code = error?.code || ''
+
+  if (isLogin) {
+    switch (code) {
+      case "auth/invalid-email": return "Adresse email invalide"
+      case "auth/user-disabled": return "Ce compte a été désactivé"
+      case "auth/user-not-found": return "Aucun compte trouvé avec cet email"
+      case "auth/wrong-password": return "Mot de passe incorrect"
+      case "auth/invalid-credential": return "Email ou mot de passe incorrect"
+      case "auth/too-many-requests": return "Trop de tentatives. Veuillez réessayer plus tard"
+      case "auth/network-request-failed": return "Erreur de connexion réseau"
+      case "auth/invalid-api-key": return "Erreur de configuration. Contactez l'administrateur."
+      default: return error?.message || "Échec de la connexion"
+    }
+  } else {
+    switch (code) {
+      case "auth/email-already-in-use": return "Un compte avec cet email existe déjà"
+      case "auth/invalid-email": return "Adresse email invalide"
+      case "auth/weak-password": return "Le mot de passe doit contenir au moins 6 caractères"
+      case "auth/operation-not-allowed": return "L'inscription est temporairement désactivée"
+      case "auth/network-request-failed": return "Erreur de connexion réseau"
+      case "auth/invalid-api-key": return "Erreur de configuration. Contactez l'administrateur."
+      default: return error?.message || "Échec de l'inscription"
+    }
+  }
+}
+
 export class AuthService {
   private static instance: AuthService
   private listeners: ((state: AuthState) => void)[] = []
   private state: AuthState = { user: null, isLoading: true }
   private initialized = false
+  private unsubscribeAuth: (() => void) | null = null
 
   static getInstance(): AuthService {
     if (!AuthService.instance) {
@@ -162,69 +180,34 @@ export class AuthService {
     this.initialized = true
 
     try {
-      const firebaseEnabled = await loadFirebaseConfig()
+      const firebase = await initFirebase()
 
-      if (firebaseEnabled && firebaseConfig) {
-        const app = getFirebaseApp()
-        const auth = getAuth(app)
-
-        onAuthStateChanged(auth, async (fbUser) => {
+      if (firebase) {
+        // Firebase mode
+        this.unsubscribeAuth = onAuthStateChanged(firebase.auth, async (fbUser) => {
           if (fbUser) {
             try {
-              const user = await this.ensureUserProfile(fbUser)
-              this.state = { user, isLoading: false }
-            } catch {
-              this.state = { user: null, isLoading: false }
+              const user = await this.loadUserProfile(fbUser, firebase.db)
+              this.setState({ user, isLoading: false })
+            } catch (error) {
+              console.error('[Auth] Error loading user profile:', error)
+              this.setState({ user: null, isLoading: false })
             }
           } else {
-            this.state = { user: null, isLoading: false }
+            this.setState({ user: null, isLoading: false })
           }
-          this.notify()
         })
       } else {
-        // Firebase désactivé - utiliser le mode mock
-        this.loadUserFromStorage()
+        // Mock mode - load from localStorage
+        this.loadFromStorage()
       }
-    } catch {
-      // Erreur lors de l'initialisation - utiliser le mode mock
-      this.loadUserFromStorage()
+    } catch (error) {
+      console.error('[Auth] Initialization error:', error)
+      this.loadFromStorage()
     }
   }
 
-  private async isFirebaseEnabled(): Promise<boolean> {
-    await loadFirebaseConfig()
-    return useFirebase && !!firebaseConfig?.apiKey
-  }
-
-  subscribe(listener: (state: AuthState) => void) {
-    this.listeners.push(listener)
-    return () => {
-      this.listeners = this.listeners.filter((l) => l !== listener)
-    }
-  }
-
-  private notify() {
-    this.listeners.forEach((listener) => listener(this.state))
-  }
-
-  private loadUserFromStorage() {
-    try {
-      const userData = localStorage.getItem("sogestmatic_user")
-      if (userData) {
-        const user = JSON.parse(userData)
-        this.state = { user, isLoading: false }
-      } else {
-        this.state = { user: null, isLoading: false }
-      }
-    } catch {
-      this.state = { user: null, isLoading: false }
-    }
-    this.notify()
-  }
-
-  private async ensureUserProfile(fbUser: FirebaseUser): Promise<User> {
-    const app = getFirebaseApp()
-    const db = getFirestore(app)
+  private async loadUserProfile(fbUser: FirebaseUser, db: Firestore): Promise<User> {
     const ref = doc(db, "users", fbUser.uid)
     const snap = await getDoc(ref)
 
@@ -239,6 +222,7 @@ export class AuthService {
       }
     }
 
+    // Create new user profile
     const user: User = {
       id: fbUser.uid,
       name: fbUser.displayName || fbUser.email?.split("@")[0] || "Utilisateur",
@@ -250,72 +234,78 @@ export class AuthService {
     return user
   }
 
-  async login(email: string, password: string): Promise<{ success: boolean; error?: string }> {
-    this.state = { ...this.state, isLoading: true }
-    this.notify()
+  private loadFromStorage() {
+    try {
+      const userData = localStorage.getItem("sogestmatic_user")
+      if (userData) {
+        const user = JSON.parse(userData)
+        this.setState({ user, isLoading: false })
+      } else {
+        this.setState({ user: null, isLoading: false })
+      }
+    } catch {
+      this.setState({ user: null, isLoading: false })
+    }
+  }
 
-    if (await this.isFirebaseEnabled()) {
+  private setState(newState: AuthState) {
+    this.state = newState
+    this.notify()
+  }
+
+  private notify() {
+    this.listeners.forEach((listener) => listener(this.state))
+  }
+
+  subscribe(listener: (state: AuthState) => void) {
+    this.listeners.push(listener)
+    return () => {
+      this.listeners = this.listeners.filter((l) => l !== listener)
+    }
+  }
+
+  async login(email: string, password: string): Promise<{ success: boolean; error?: string }> {
+    this.setState({ ...this.state, isLoading: true })
+
+    const firebase = await initFirebase()
+
+    if (firebase) {
       try {
-        const app = getFirebaseApp()
-        const auth = getAuth(app)
-        const cred = await signInWithEmailAndPassword(auth, email, password)
-        const user = await this.ensureUserProfile(cred.user)
-        this.state = { user, isLoading: false }
-        this.notify()
+        const cred = await signInWithEmailAndPassword(firebase.auth, email, password)
+        const user = await this.loadUserProfile(cred.user, firebase.db)
+        this.setState({ user, isLoading: false })
         return { success: true }
       } catch (e: unknown) {
-        this.state = { user: null, isLoading: false }
-        this.notify()
+        this.setState({ user: null, isLoading: false })
         const error = e as { code?: string; message?: string }
-        // Translate Firebase error codes to French
-        let errorMessage = "Échec de la connexion"
-        switch (error?.code) {
-          case "auth/invalid-email":
-            errorMessage = "Adresse email invalide"
-            break
-          case "auth/user-disabled":
-            errorMessage = "Ce compte a été désactivé"
-            break
-          case "auth/user-not-found":
-            errorMessage = "Aucun compte trouvé avec cet email"
-            break
-          case "auth/wrong-password":
-            errorMessage = "Mot de passe incorrect"
-            break
-          case "auth/invalid-credential":
-            errorMessage = "Email ou mot de passe incorrect"
-            break
-          case "auth/too-many-requests":
-            errorMessage = "Trop de tentatives. Veuillez réessayer plus tard"
-            break
-          case "auth/network-request-failed":
-            errorMessage = "Erreur de connexion réseau"
-            break
-          default:
-            errorMessage = error?.message || "Échec de la connexion"
-        }
-        return { success: false, error: errorMessage }
+        console.error('[Auth] Login error:', error.code, error.message)
+        return { success: false, error: translateFirebaseError(error, true) }
       }
     }
 
     // Mock fallback
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    const mockUser = MOCK_USERS.find((u) => u.email === email && u.password === password)
+    await new Promise((r) => setTimeout(r, 300))
+
+    const mockUsers = [
+      { id: "1", name: "Admin User", email: "admin@sogestmatic.com", password: "admin123", role: "admin" as const },
+      { id: "2", name: "Test User", email: "user@test.com", password: "user123", role: "gratuit" as const },
+    ]
+
+    const mockUser = mockUsers.find((u) => u.email === email && u.password === password)
     if (mockUser) {
       const user: User = {
         id: mockUser.id,
         name: mockUser.name,
         email: mockUser.email,
         role: mockUser.role,
-        createdAt: mockUser.createdAt,
+        createdAt: new Date().toISOString(),
       }
       localStorage.setItem("sogestmatic_user", JSON.stringify(user))
-      this.state = { user, isLoading: false }
-      this.notify()
+      this.setState({ user, isLoading: false })
       return { success: true }
     }
-    this.state = { user: null, isLoading: false }
-    this.notify()
+
+    this.setState({ user: null, isLoading: false })
     return { success: false, error: "Email ou mot de passe incorrect" }
   }
 
@@ -323,20 +313,20 @@ export class AuthService {
     name: string,
     email: string,
     password: string,
-    extras?: UserProfileExtras,
+    extras?: UserProfileExtras
   ): Promise<{ success: boolean; error?: string }> {
-    this.state = { ...this.state, isLoading: true }
-    this.notify()
+    this.setState({ ...this.state, isLoading: true })
 
-    if (await this.isFirebaseEnabled()) {
+    const firebase = await initFirebase()
+
+    if (firebase) {
       try {
-        const app = getFirebaseApp()
-        const auth = getAuth(app)
-        const db = getFirestore(app)
-        const cred = await createUserWithEmailAndPassword(auth, email, password)
-        if (auth.currentUser) {
-          await updateProfile(auth.currentUser, { displayName: name })
+        const cred = await createUserWithEmailAndPassword(firebase.auth, email, password)
+
+        if (firebase.auth.currentUser) {
+          await updateProfile(firebase.auth.currentUser, { displayName: name })
         }
+
         const user: User = {
           id: cred.user.uid,
           name,
@@ -344,94 +334,65 @@ export class AuthService {
           role: "gratuit",
           createdAt: new Date().toISOString(),
         }
+
         const payload = sanitizeForFirestore({ ...user, ...extras })
-        await setDoc(doc(db, "users", cred.user.uid), payload)
-        this.state = { user, isLoading: false }
-        this.notify()
+        await setDoc(doc(firebase.db, "users", cred.user.uid), payload)
+
+        this.setState({ user, isLoading: false })
         return { success: true }
       } catch (e: unknown) {
-        this.state = { user: null, isLoading: false }
-        this.notify()
+        this.setState({ user: null, isLoading: false })
         const error = e as { code?: string; message?: string }
-        // Translate Firebase error codes to French
-        let errorMessage = "Échec de l'inscription"
-        switch (error?.code) {
-          case "auth/email-already-in-use":
-            errorMessage = "Un compte avec cet email existe déjà"
-            break
-          case "auth/invalid-email":
-            errorMessage = "Adresse email invalide"
-            break
-          case "auth/weak-password":
-            errorMessage = "Le mot de passe doit contenir au moins 6 caractères"
-            break
-          case "auth/operation-not-allowed":
-            errorMessage = "L'inscription est temporairement désactivée"
-            break
-          case "auth/network-request-failed":
-            errorMessage = "Erreur de connexion réseau"
-            break
-          default:
-            errorMessage = error?.message || "Échec de l'inscription"
-        }
-        return { success: false, error: errorMessage }
+        console.error('[Auth] Register error:', error.code, error.message)
+        return { success: false, error: translateFirebaseError(error, false) }
       }
     }
 
     // Mock fallback
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    const existingUser = MOCK_USERS.find((u) => u.email === email)
-    if (existingUser) {
-      this.state = { user: null, isLoading: false }
-      this.notify()
-      return { success: false, error: "Un compte avec cet email existe déjà" }
-    }
-    const newUser: User = {
+    await new Promise((r) => setTimeout(r, 300))
+
+    const user: User = {
       id: Date.now().toString(),
       name,
       email,
       role: "gratuit",
       createdAt: new Date().toISOString(),
     }
-    MOCK_USERS.push({ ...newUser, password, ...extras } as typeof MOCK_USERS[0])
-    localStorage.setItem("sogestmatic_user", JSON.stringify(newUser))
-    this.state = { user: newUser, isLoading: false }
-    this.notify()
+    localStorage.setItem("sogestmatic_user", JSON.stringify(user))
+    this.setState({ user, isLoading: false })
     return { success: true }
   }
 
   async logout() {
-    if (await this.isFirebaseEnabled()) {
+    const firebase = await initFirebase()
+
+    if (firebase) {
       try {
-        const app = getFirebaseApp()
-        const auth = getAuth(app)
-        await signOut(auth)
-      } catch {
-        // ignore
+        await signOut(firebase.auth)
+      } catch (error) {
+        console.error('[Auth] Logout error:', error)
       }
     }
+
     localStorage.removeItem("sogestmatic_user")
-    this.state = { user: null, isLoading: false }
-    this.notify()
+    this.setState({ user: null, isLoading: false })
   }
 
   async resetPassword(email: string): Promise<{ success: boolean; error?: string }> {
-    if (await this.isFirebaseEnabled()) {
+    const firebase = await initFirebase()
+
+    if (firebase) {
       try {
-        const app = getFirebaseApp()
-        const auth = getAuth(app)
-        await sendPasswordResetEmail(auth, email)
+        await sendPasswordResetEmail(firebase.auth, email)
         return { success: true }
       } catch (e: unknown) {
-        const error = e as { message?: string }
-        return { success: false, error: error?.message || "Impossible d'envoyer l'email de réinitialisation" }
+        const error = e as { code?: string; message?: string }
+        return { success: false, error: translateFirebaseError(error, true) }
       }
     }
+
     // Mock fallback
-    await new Promise((resolve) => setTimeout(resolve, 300))
-    const user = MOCK_USERS.find((u) => u.email === email)
-    if (user) return { success: true }
-    return { success: false, error: "Aucun compte trouvé avec cet email" }
+    return { success: true }
   }
 
   getState(): AuthState {
