@@ -74,18 +74,42 @@ function extractDomain(url: string): string {
 function renderMessageHTML(text: string) {
   let out = escapeHtml(text)
 
-  // Convertir les sauts de ligne en paragraphes
-  out = out.replace(/\n\n+/g, '</p><p>')
-  out = out.replace(/\n/g, '<br>')
-  out = `<p>${out}</p>`
+  // Convertir les sauts de ligne multiples en paragraphes avec espacement
+  // D'abord, diviser le texte en blocs séparés par des doubles sauts de ligne
+  const blocks = out.split(/\n\n+/)
 
-  // Convertir les listes à puces
-  out = out.replace(/<p>(\s*[-•*]\s+)/g, '<p><ul><li>')
-  out = out.replace(/(\n\s*[-•*]\s+)/g, '</li><li>')
-  out = out.replace(/(<br>\s*[-•*]\s+)/g, '</li><li>')
+  // Traiter chaque bloc
+  const processedBlocks = blocks.map(block => {
+    let processedBlock = block.trim()
 
-  // Fermer les listes
-  out = out.replace(/(<\/li>)(<p>)/g, '$1</ul>$2')
+    // Convertir les sauts de ligne simples en <br> dans chaque bloc
+    processedBlock = processedBlock.replace(/\n/g, '<br>')
+
+    // Détecter et convertir les listes à puces
+    const lines = processedBlock.split('<br>')
+    const hasListItems = lines.some(line => /^\s*[-•*]\s+/.test(line))
+
+    if (hasListItems) {
+      // C'est une liste
+      const listItems = lines
+        .map(line => {
+          const match = line.match(/^\s*[-•*]\s+(.+)/)
+          if (match) {
+            return `<li>${match[1]}</li>`
+          }
+          return line
+        })
+        .filter(line => line.startsWith('<li>'))
+        .join('')
+
+      return `<ul class="list-disc list-inside my-3 space-y-1">${listItems}</ul>`
+    }
+
+    // Sinon, c'est un paragraphe normal
+    return `<p class="mb-4 leading-relaxed">${processedBlock}</p>`
+  })
+
+  out = processedBlocks.join('')
 
   // Convertir les liens markdown avec icône externe et domaine visible
   out = out.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, (_m, label, url) => {
