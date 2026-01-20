@@ -114,9 +114,6 @@ export function RegisterForm({ onToggleMode }: RegisterFormProps) {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <p className="text-xs text-muted-foreground">
-            Firebase actif: {process.env.NEXT_PUBLIC_USE_FIREBASE === "true" ? "oui" : "non"} {process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ? `(${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID})` : ""}
-          </p>
           {error && (
             <Alert variant="destructive">
               <AlertDescription>{error}</AlertDescription>
