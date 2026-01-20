@@ -1,12 +1,16 @@
 # Force Railway to use npm instead of pnpm
+providers = []
+
 [phases.setup]
 nixPkgs = ["nodejs_18"]
 
 [phases.install]
-cmds = ["npm ci || npm install --legacy-peer-deps"]
+dependsOn = ["setup"]
+cmds = ["npm install --legacy-peer-deps"]
 
 [phases.build]
+dependsOn = ["install"]
 cmds = ["npm run build"]
 
 [start]
-cmd = "npm start"
+cmd = "npm run start"
