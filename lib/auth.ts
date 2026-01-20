@@ -46,38 +46,19 @@ export interface AuthState {
   isLoading: boolean
 }
 
-// Cache de la configuration Firebase (chargée depuis l'API)
-let cachedConfig: {
-  useFirebase: boolean
-  firebase: {
-    apiKey: string
-    authDomain: string
-    projectId: string
-    storageBucket: string
-    messagingSenderId: string
-    appId: string
-  }
+// Configuration Firebase - chargée depuis l'API au runtime
+let firebaseConfig: {
+  apiKey: string
+  authDomain: string
+  projectId: string
+  storageBucket: string
+  messagingSenderId: string
+  appId: string
 } | null = null
 
-let configPromise: Promise<typeof cachedConfig> | null = null
-
-// Charger la configuration depuis l'API (contourne le problème NEXT_PUBLIC_ au build time)
-async function loadConfig() {
-  if (cachedConfig) return cachedConfig
-  if (configPromise) return configPromise
-
-  configPromise = fetch('/api/config')
-    .then(res => res.json())
-    .then(config => {
-      cachedConfig = config
-      return config
-    })
-    .catch(() => {
-      return null
-    })
-
-  return configPromise
-}
+let useFirebase = false
+let configLoaded = false
+let firebaseApp: FirebaseApp | null = null
 
 // Fallback mock users (used when Firebase is not configured)
 const MOCK_USERS = [
@@ -99,17 +80,41 @@ const MOCK_USERS = [
   },
 ]
 
-let firebaseApp: FirebaseApp | null = null
+// Charger la configuration Firebase depuis l'API
+async function loadFirebaseConfig(): Promise<boolean> {
+  if (configLoaded) return useFirebase
 
-function getFirebaseApp(config: NonNullable<typeof cachedConfig>['firebase']) {
+  try {
+    const response = await fetch('/api/config')
+    if (!response.ok) {
+      configLoaded = true
+      return false
+    }
+
+    const config = await response.json()
+    useFirebase = config.useFirebase === true
+
+    if (useFirebase && config.firebase?.apiKey) {
+      firebaseConfig = config.firebase
+    }
+
+    configLoaded = true
+    return useFirebase && !!firebaseConfig?.apiKey
+  } catch {
+    configLoaded = true
+    return false
+  }
+}
+
+function getFirebaseApp(): FirebaseApp {
   if (firebaseApp) return firebaseApp
 
-  if (!config.apiKey || !config.projectId) {
+  if (!firebaseConfig?.apiKey || !firebaseConfig?.projectId) {
     throw new Error("Configuration Firebase incomplète")
   }
 
   if (!getApps().length) {
-    firebaseApp = initializeApp(config)
+    firebaseApp = initializeApp(firebaseConfig)
   } else {
     firebaseApp = getApps()[0]!
   }
@@ -123,12 +128,12 @@ function sanitizeForFirestore<T>(value: T): T {
     return value.map((v) => sanitizeForFirestore(v)) as unknown as T
   }
   if (value && typeof value === "object") {
-    const cleaned: any = {}
+    const cleaned: Record<string, unknown> = {}
     for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
       if (v === undefined) continue
-      cleaned[k] = sanitizeForFirestore(v as any)
+      cleaned[k] = sanitizeForFirestore(v)
     }
-    return cleaned
+    return cleaned as T
   }
   return value
 }
@@ -137,7 +142,7 @@ export class AuthService {
   private static instance: AuthService
   private listeners: ((state: AuthState) => void)[] = []
   private state: AuthState = { user: null, isLoading: true }
-  private configLoaded = false
+  private initialized = false
 
   static getInstance(): AuthService {
     if (!AuthService.instance) {
@@ -153,43 +158,42 @@ export class AuthService {
   }
 
   private async initializeAuth() {
-    try {
-      const config = await loadConfig()
-      this.configLoaded = true
+    if (this.initialized) return
+    this.initialized = true
 
-      if (config?.useFirebase && config.firebase?.apiKey) {
-        const app = getFirebaseApp(config.firebase)
+    try {
+      const firebaseEnabled = await loadFirebaseConfig()
+
+      if (firebaseEnabled && firebaseConfig) {
+        const app = getFirebaseApp()
         const auth = getAuth(app)
+
         onAuthStateChanged(auth, async (fbUser) => {
           if (fbUser) {
-            const user = await this.ensureUserProfile(fbUser)
-            this.state = { user, isLoading: false }
+            try {
+              const user = await this.ensureUserProfile(fbUser)
+              this.state = { user, isLoading: false }
+            } catch {
+              this.state = { user: null, isLoading: false }
+            }
           } else {
             this.state = { user: null, isLoading: false }
           }
           this.notify()
         })
       } else {
+        // Firebase désactivé - utiliser le mode mock
         this.loadUserFromStorage()
       }
     } catch {
+      // Erreur lors de l'initialisation - utiliser le mode mock
       this.loadUserFromStorage()
     }
   }
 
   private async isFirebaseEnabled(): Promise<boolean> {
-    if (!this.configLoaded) {
-      await loadConfig()
-      this.configLoaded = true
-    }
-    return !!(cachedConfig?.useFirebase && cachedConfig.firebase?.apiKey)
-  }
-
-  private getApp() {
-    if (!cachedConfig?.firebase) {
-      throw new Error("Configuration Firebase non chargée")
-    }
-    return getFirebaseApp(cachedConfig.firebase)
+    await loadFirebaseConfig()
+    return useFirebase && !!firebaseConfig?.apiKey
   }
 
   subscribe(listener: (state: AuthState) => void) {
@@ -210,7 +214,6 @@ export class AuthService {
         const user = JSON.parse(userData)
         this.state = { user, isLoading: false }
       } else {
-        // Pas d'utilisateur connecté
         this.state = { user: null, isLoading: false }
       }
     } catch {
@@ -220,10 +223,11 @@ export class AuthService {
   }
 
   private async ensureUserProfile(fbUser: FirebaseUser): Promise<User> {
-    const app = this.getApp()
+    const app = getFirebaseApp()
     const db = getFirestore(app)
     const ref = doc(db, "users", fbUser.uid)
     const snap = await getDoc(ref)
+
     if (snap.exists()) {
       const data = snap.data() as Partial<User>
       return {
@@ -234,6 +238,7 @@ export class AuthService {
         createdAt: data.createdAt || new Date().toISOString(),
       }
     }
+
     const user: User = {
       id: fbUser.uid,
       name: fbUser.displayName || fbUser.email?.split("@")[0] || "Utilisateur",
@@ -251,17 +256,18 @@ export class AuthService {
 
     if (await this.isFirebaseEnabled()) {
       try {
-        const app = this.getApp()
+        const app = getFirebaseApp()
         const auth = getAuth(app)
         const cred = await signInWithEmailAndPassword(auth, email, password)
         const user = await this.ensureUserProfile(cred.user)
         this.state = { user, isLoading: false }
         this.notify()
         return { success: true }
-      } catch (e: any) {
+      } catch (e: unknown) {
         this.state = { user: null, isLoading: false }
         this.notify()
-        return { success: false, error: e?.message || "Échec de la connexion" }
+        const error = e as { message?: string }
+        return { success: false, error: error?.message || "Échec de la connexion" }
       }
     }
 
@@ -297,7 +303,7 @@ export class AuthService {
 
     if (await this.isFirebaseEnabled()) {
       try {
-        const app = this.getApp()
+        const app = getFirebaseApp()
         const auth = getAuth(app)
         const db = getFirestore(app)
         const cred = await createUserWithEmailAndPassword(auth, email, password)
@@ -316,10 +322,11 @@ export class AuthService {
         this.state = { user, isLoading: false }
         this.notify()
         return { success: true }
-      } catch (e: any) {
+      } catch (e: unknown) {
         this.state = { user: null, isLoading: false }
         this.notify()
-        return { success: false, error: e?.message || "Échec de l'inscription" }
+        const error = e as { message?: string }
+        return { success: false, error: error?.message || "Échec de l'inscription" }
       }
     }
 
@@ -338,7 +345,7 @@ export class AuthService {
       role: "gratuit",
       createdAt: new Date().toISOString(),
     }
-    MOCK_USERS.push({ ...newUser, password, ...extras } as any)
+    MOCK_USERS.push({ ...newUser, password, ...extras } as typeof MOCK_USERS[0])
     localStorage.setItem("sogestmatic_user", JSON.stringify(newUser))
     this.state = { user: newUser, isLoading: false }
     this.notify()
@@ -348,7 +355,7 @@ export class AuthService {
   async logout() {
     if (await this.isFirebaseEnabled()) {
       try {
-        const app = this.getApp()
+        const app = getFirebaseApp()
         const auth = getAuth(app)
         await signOut(auth)
       } catch {
@@ -363,12 +370,13 @@ export class AuthService {
   async resetPassword(email: string): Promise<{ success: boolean; error?: string }> {
     if (await this.isFirebaseEnabled()) {
       try {
-        const app = this.getApp()
+        const app = getFirebaseApp()
         const auth = getAuth(app)
         await sendPasswordResetEmail(auth, email)
         return { success: true }
-      } catch (e: any) {
-        return { success: false, error: e?.message || "Impossible d'envoyer l'email de réinitialisation" }
+      } catch (e: unknown) {
+        const error = e as { message?: string }
+        return { success: false, error: error?.message || "Impossible d'envoyer l'email de réinitialisation" }
       }
     }
     // Mock fallback
