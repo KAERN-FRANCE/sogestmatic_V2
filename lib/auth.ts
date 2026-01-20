@@ -1,6 +1,6 @@
 "use client"
 
-import { initializeApp, getApps } from "firebase/app"
+import { initializeApp, getApps, type FirebaseApp } from "firebase/app"
 import {
   getAuth,
   onAuthStateChanged,
@@ -46,6 +46,45 @@ export interface AuthState {
   isLoading: boolean
 }
 
+// Cache de la configuration Firebase (chargée depuis l'API)
+let cachedConfig: {
+  useFirebase: boolean
+  firebase: {
+    apiKey: string
+    authDomain: string
+    projectId: string
+    storageBucket: string
+    messagingSenderId: string
+    appId: string
+  }
+} | null = null
+
+let configPromise: Promise<typeof cachedConfig> | null = null
+
+// Charger la configuration depuis l'API (contourne le problème NEXT_PUBLIC_ au build time)
+async function loadConfig() {
+  if (cachedConfig) return cachedConfig
+  if (configPromise) return configPromise
+
+  configPromise = fetch('/api/config')
+    .then(res => res.json())
+    .then(config => {
+      cachedConfig = config
+      console.info("[Auth] Configuration chargée depuis API:", {
+        useFirebase: config.useFirebase,
+        hasApiKey: !!config.firebase?.apiKey,
+        projectId: config.firebase?.projectId,
+      })
+      return config
+    })
+    .catch(err => {
+      console.error("[Auth] Erreur chargement config:", err)
+      return null
+    })
+
+  return configPromise
+}
+
 // Fallback mock users (used when Firebase is not configured)
 const MOCK_USERS = [
   {
@@ -66,43 +105,28 @@ const MOCK_USERS = [
   },
 ]
 
-function isFirebaseEnabled() {
-  const enabled = typeof window !== "undefined" && process.env.NEXT_PUBLIC_USE_FIREBASE === "true"
-  if (typeof window !== "undefined") {
-    console.info("[Auth] Firebase enabled check:", {
-      enabled,
-      USE_FIREBASE: process.env.NEXT_PUBLIC_USE_FIREBASE,
-      hasApiKey: !!process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-      hasProjectId: !!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-    })
-  }
-  return enabled
-}
+let firebaseApp: FirebaseApp | null = null
 
-function getFirebaseApp() {
-  const config = {
-    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  }
+function getFirebaseApp(config: NonNullable<typeof cachedConfig>['firebase']) {
+  if (firebaseApp) return firebaseApp
 
-  // Vérifier que les variables essentielles sont présentes
   if (!config.apiKey || !config.projectId) {
     console.error("[Auth] Configuration Firebase manquante:", {
       hasApiKey: !!config.apiKey,
       hasProjectId: !!config.projectId,
       hasAuthDomain: !!config.authDomain,
     })
+    throw new Error("Configuration Firebase incomplète")
   }
 
   if (!getApps().length) {
     console.info("[Auth] Initialisation Firebase avec projectId:", config.projectId)
-    return initializeApp(config)
+    firebaseApp = initializeApp(config)
+  } else {
+    firebaseApp = getApps()[0]!
   }
-  return getApps()[0]!
+
+  return firebaseApp
 }
 
 // Remove all undefined values recursively so Firestore accepts the payload
@@ -125,6 +149,7 @@ export class AuthService {
   private static instance: AuthService
   private listeners: ((state: AuthState) => void)[] = []
   private state: AuthState = { user: null, isLoading: true }
+  private configLoaded = false
 
   static getInstance(): AuthService {
     if (!AuthService.instance) {
@@ -135,14 +160,18 @@ export class AuthService {
 
   constructor() {
     if (typeof window !== "undefined") {
-      if (isFirebaseEnabled()) {
-        console.info(
-          "[Auth] Firebase activé",
-          {
-            projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-          }
-        )
-        const app = getFirebaseApp()
+      this.initializeAuth()
+    }
+  }
+
+  private async initializeAuth() {
+    try {
+      const config = await loadConfig()
+      this.configLoaded = true
+
+      if (config?.useFirebase && config.firebase?.apiKey) {
+        console.info("[Auth] Firebase activé", { projectId: config.firebase.projectId })
+        const app = getFirebaseApp(config.firebase)
         const auth = getAuth(app)
         onAuthStateChanged(auth, async (fbUser) => {
           if (fbUser) {
@@ -157,7 +186,25 @@ export class AuthService {
         console.info("[Auth] Mode mock (Firebase désactivé)")
         this.loadUserFromStorage()
       }
+    } catch (err) {
+      console.error("[Auth] Erreur initialisation:", err)
+      this.loadUserFromStorage()
     }
+  }
+
+  private async isFirebaseEnabled(): Promise<boolean> {
+    if (!this.configLoaded) {
+      await loadConfig()
+      this.configLoaded = true
+    }
+    return !!(cachedConfig?.useFirebase && cachedConfig.firebase?.apiKey)
+  }
+
+  private getApp() {
+    if (!cachedConfig?.firebase) {
+      throw new Error("Configuration Firebase non chargée")
+    }
+    return getFirebaseApp(cachedConfig.firebase)
   }
 
   subscribe(listener: (state: AuthState) => void) {
@@ -188,7 +235,7 @@ export class AuthService {
   }
 
   private async ensureUserProfile(fbUser: FirebaseUser): Promise<User> {
-    const app = getFirebaseApp()
+    const app = this.getApp()
     const db = getFirestore(app)
     const ref = doc(db, "users", fbUser.uid)
     const snap = await getDoc(ref)
@@ -217,9 +264,9 @@ export class AuthService {
     this.state = { ...this.state, isLoading: true }
     this.notify()
 
-    if (isFirebaseEnabled()) {
+    if (await this.isFirebaseEnabled()) {
       try {
-        const app = getFirebaseApp()
+        const app = this.getApp()
         const auth = getAuth(app)
         const cred = await signInWithEmailAndPassword(auth, email, password)
         const user = await this.ensureUserProfile(cred.user)
@@ -264,12 +311,12 @@ export class AuthService {
     this.state = { ...this.state, isLoading: true }
     this.notify()
 
-    if (isFirebaseEnabled()) {
+    if (await this.isFirebaseEnabled()) {
       try {
-        const app = getFirebaseApp()
+        const app = this.getApp()
         const auth = getAuth(app)
         const db = getFirestore(app)
-        console.info("[Auth] register via Firebase", { projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID })
+        console.info("[Auth] register via Firebase", { projectId: cachedConfig?.firebase?.projectId })
         const cred = await createUserWithEmailAndPassword(auth, email, password)
         if (auth.currentUser) {
           await updateProfile(auth.currentUser, { displayName: name })
@@ -317,9 +364,9 @@ export class AuthService {
   }
 
   async logout() {
-    if (isFirebaseEnabled()) {
+    if (await this.isFirebaseEnabled()) {
       try {
-        const app = getFirebaseApp()
+        const app = this.getApp()
         const auth = getAuth(app)
         await signOut(auth)
       } catch {
@@ -332,9 +379,9 @@ export class AuthService {
   }
 
   async resetPassword(email: string): Promise<{ success: boolean; error?: string }> {
-    if (isFirebaseEnabled()) {
+    if (await this.isFirebaseEnabled()) {
       try {
-        const app = getFirebaseApp()
+        const app = this.getApp()
         const auth = getAuth(app)
         await sendPasswordResetEmail(auth, email)
         return { success: true }
