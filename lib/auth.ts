@@ -266,8 +266,35 @@ export class AuthService {
       } catch (e: unknown) {
         this.state = { user: null, isLoading: false }
         this.notify()
-        const error = e as { message?: string }
-        return { success: false, error: error?.message || "Échec de la connexion" }
+        const error = e as { code?: string; message?: string }
+        // Translate Firebase error codes to French
+        let errorMessage = "Échec de la connexion"
+        switch (error?.code) {
+          case "auth/invalid-email":
+            errorMessage = "Adresse email invalide"
+            break
+          case "auth/user-disabled":
+            errorMessage = "Ce compte a été désactivé"
+            break
+          case "auth/user-not-found":
+            errorMessage = "Aucun compte trouvé avec cet email"
+            break
+          case "auth/wrong-password":
+            errorMessage = "Mot de passe incorrect"
+            break
+          case "auth/invalid-credential":
+            errorMessage = "Email ou mot de passe incorrect"
+            break
+          case "auth/too-many-requests":
+            errorMessage = "Trop de tentatives. Veuillez réessayer plus tard"
+            break
+          case "auth/network-request-failed":
+            errorMessage = "Erreur de connexion réseau"
+            break
+          default:
+            errorMessage = error?.message || "Échec de la connexion"
+        }
+        return { success: false, error: errorMessage }
       }
     }
 
@@ -325,8 +352,29 @@ export class AuthService {
       } catch (e: unknown) {
         this.state = { user: null, isLoading: false }
         this.notify()
-        const error = e as { message?: string }
-        return { success: false, error: error?.message || "Échec de l'inscription" }
+        const error = e as { code?: string; message?: string }
+        // Translate Firebase error codes to French
+        let errorMessage = "Échec de l'inscription"
+        switch (error?.code) {
+          case "auth/email-already-in-use":
+            errorMessage = "Un compte avec cet email existe déjà"
+            break
+          case "auth/invalid-email":
+            errorMessage = "Adresse email invalide"
+            break
+          case "auth/weak-password":
+            errorMessage = "Le mot de passe doit contenir au moins 6 caractères"
+            break
+          case "auth/operation-not-allowed":
+            errorMessage = "L'inscription est temporairement désactivée"
+            break
+          case "auth/network-request-failed":
+            errorMessage = "Erreur de connexion réseau"
+            break
+          default:
+            errorMessage = error?.message || "Échec de l'inscription"
+        }
+        return { success: false, error: errorMessage }
       }
     }
 

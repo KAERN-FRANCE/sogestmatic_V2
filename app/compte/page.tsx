@@ -68,14 +68,8 @@ export default function ComptePage() {
     }
   }
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    )
-  }
-
+  // Show auth forms if not logged in OR if still loading initial state
+  // We keep the form mounted to preserve input state during login attempts
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-secondary/30 py-12">
