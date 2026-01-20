@@ -7,22 +7,8 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { MessageSquare, Search, Trash2, ExternalLink, Loader2 } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
-import { initializeApp } from "firebase/app"
-import { getFirestore, collection, query, where, getDocs, deleteDoc, doc } from "firebase/firestore"
-
-// Configuration Firebase
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-}
-
-// Initialiser Firebase
-const app = initializeApp(firebaseConfig)
-const db = getFirestore(app)
+import { collection, query, where, getDocs, deleteDoc, doc } from "firebase/firestore"
+import { getFirebaseInstance } from "@/lib/firebase"
 
 interface Conversation {
   id: string
@@ -47,21 +33,28 @@ export function ConversationHistory() {
 
   const loadConversationsFromFirebase = async () => {
     if (!user) return
-    
+
     setIsLoading(true)
     try {
-      const conversationsRef = collection(db, 'conversations')
+      const firebase = await getFirebaseInstance()
+      if (!firebase) {
+        console.log('[Conversations] Firebase not available')
+        setIsLoading(false)
+        return
+      }
+
+      const conversationsRef = collection(firebase.db, 'conversations')
       const q = query(conversationsRef, where('userId', '==', user.id))
       const querySnapshot = await getDocs(q)
-      
+
       const loadedConversations: Conversation[] = []
-      querySnapshot.forEach((doc) => {
-        const data = doc.data()
+      querySnapshot.forEach((docSnap) => {
+        const data = docSnap.data()
         const messages = data.messages || []
         const lastMessage = messages.length > 0 ? messages[messages.length - 1].text : "Aucun message"
-        
+
         loadedConversations.push({
-          id: doc.id,
+          id: docSnap.id,
           title: data.title || "Conversation sans titre",
           lastMessage: lastMessage,
           messageCount: messages.length,
@@ -69,7 +62,7 @@ export function ConversationHistory() {
           updatedAt: data.updatedAt?.toDate()?.toISOString() || new Date().toISOString()
         })
       })
-      
+
       // Trier par date (plus récent en premier)
       loadedConversations.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
       setConversations(loadedConversations)
@@ -88,10 +81,13 @@ export function ConversationHistory() {
 
   const deleteConversation = async (id: string) => {
     try {
+      const firebase = await getFirebaseInstance()
+      if (!firebase) return
+
       // Supprimer de Firebase
-      const conversationRef = doc(db, 'conversations', id)
+      const conversationRef = doc(firebase.db, 'conversations', id)
       await deleteDoc(conversationRef)
-      
+
       // Mettre à jour l'état local
       const updated = conversations.filter((conv) => conv.id !== id)
       setConversations(updated)
@@ -111,9 +107,9 @@ export function ConversationHistory() {
             </CardTitle>
             <CardDescription>Retrouvez toutes vos conversations avec l'Assistant IA</CardDescription>
           </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             onClick={loadConversationsFromFirebase}
             disabled={isLoading}
           >
@@ -174,8 +170,8 @@ export function ConversationHistory() {
                     </p>
                   </div>
                   <div className="flex items-center space-x-2 ml-4">
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       variant="outline"
                       asChild
                     >

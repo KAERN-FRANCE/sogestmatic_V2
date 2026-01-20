@@ -1,8 +1,6 @@
 "use client"
 
-import { initializeApp, getApps, deleteApp, type FirebaseApp } from "firebase/app"
 import {
-  getAuth,
   onAuthStateChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -10,9 +8,9 @@ import {
   signOut,
   updateProfile,
   type User as FirebaseUser,
-  type Auth,
 } from "firebase/auth"
-import { getFirestore, doc, getDoc, setDoc, type Firestore } from "firebase/firestore"
+import { doc, getDoc, setDoc, type Firestore } from "firebase/firestore"
+import { getFirebaseInstance } from "./firebase"
 
 export interface User {
   id: string
@@ -45,69 +43,6 @@ export interface UserProfileExtras {
 export interface AuthState {
   user: User | null
   isLoading: boolean
-}
-
-interface FirebaseConfig {
-  apiKey: string
-  authDomain: string
-  projectId: string
-  storageBucket: string
-  messagingSenderId: string
-  appId: string
-}
-
-// Singleton instances
-let firebaseApp: FirebaseApp | null = null
-let firebaseAuth: Auth | null = null
-let firebaseDb: Firestore | null = null
-let cachedConfig: { useFirebase: boolean; firebase: FirebaseConfig } | null = null
-
-// Fetch config from API
-async function fetchConfig(): Promise<{ useFirebase: boolean; firebase: FirebaseConfig }> {
-  if (cachedConfig) return cachedConfig
-
-  try {
-    const res = await fetch('/api/config', { cache: 'no-store' })
-    if (!res.ok) throw new Error('Config fetch failed')
-    cachedConfig = await res.json()
-    return cachedConfig!
-  } catch (error) {
-    console.error('[Auth] Failed to fetch config:', error)
-    return { useFirebase: false, firebase: {} as FirebaseConfig }
-  }
-}
-
-// Initialize Firebase with fresh config
-async function initFirebase(): Promise<{ app: FirebaseApp; auth: Auth; db: Firestore } | null> {
-  if (firebaseApp && firebaseAuth && firebaseDb) {
-    return { app: firebaseApp, auth: firebaseAuth, db: firebaseDb }
-  }
-
-  const config = await fetchConfig()
-
-  if (!config.useFirebase || !config.firebase?.apiKey) {
-    console.log('[Auth] Firebase disabled or no API key')
-    return null
-  }
-
-  try {
-    // Clear any existing apps to ensure fresh initialization
-    const existingApps = getApps()
-    for (const app of existingApps) {
-      await deleteApp(app)
-    }
-
-    // Initialize fresh
-    firebaseApp = initializeApp(config.firebase)
-    firebaseAuth = getAuth(firebaseApp)
-    firebaseDb = getFirestore(firebaseApp)
-
-    console.log('[Auth] Firebase initialized successfully')
-    return { app: firebaseApp, auth: firebaseAuth, db: firebaseDb }
-  } catch (error) {
-    console.error('[Auth] Firebase initialization error:', error)
-    return null
-  }
 }
 
 // Sanitize objects for Firestore (remove undefined values)
@@ -180,7 +115,7 @@ export class AuthService {
     this.initialized = true
 
     try {
-      const firebase = await initFirebase()
+      const firebase = await getFirebaseInstance()
 
       if (firebase) {
         // Firebase mode
@@ -267,7 +202,7 @@ export class AuthService {
   async login(email: string, password: string): Promise<{ success: boolean; error?: string }> {
     this.setState({ ...this.state, isLoading: true })
 
-    const firebase = await initFirebase()
+    const firebase = await getFirebaseInstance()
 
     if (firebase) {
       try {
@@ -317,7 +252,7 @@ export class AuthService {
   ): Promise<{ success: boolean; error?: string }> {
     this.setState({ ...this.state, isLoading: true })
 
-    const firebase = await initFirebase()
+    const firebase = await getFirebaseInstance()
 
     if (firebase) {
       try {
@@ -364,7 +299,7 @@ export class AuthService {
   }
 
   async logout() {
-    const firebase = await initFirebase()
+    const firebase = await getFirebaseInstance()
 
     if (firebase) {
       try {
@@ -379,7 +314,7 @@ export class AuthService {
   }
 
   async resetPassword(email: string): Promise<{ success: boolean; error?: string }> {
-    const firebase = await initFirebase()
+    const firebase = await getFirebaseInstance()
 
     if (firebase) {
       try {
