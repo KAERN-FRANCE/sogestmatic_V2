@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const debug = {
       environment: process.env.NODE_ENV,
@@ -12,6 +12,7 @@ export async function GET(request: NextRequest) {
       embeddingModel: process.env.EMBEDDING_MODEL || 'text-embedding-3-small (défaut)',
       systemInstructions: process.env.SYSTEM_INSTRUCTIONS ? '✅ Personnalisées' : '❌ Défaut',
       firebase: {
+        enabled: process.env.NEXT_PUBLIC_USE_FIREBASE === 'true' ? '✅ Activé' : '❌ Désactivé (' + process.env.NEXT_PUBLIC_USE_FIREBASE + ')',
         apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY ? '✅ Configurée' : '❌ Manquante',
         projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || '❌ Manquant',
         authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || '❌ Manquant'
