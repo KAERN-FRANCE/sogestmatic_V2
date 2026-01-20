@@ -1,13 +1,2 @@
-[build]
-builder = "nixpacks"
-buildCommand = "pnpm install --frozen-lockfile && pnpm build"
-
 [deploy]
-startCommand = "pnpm start"
-healthcheckPath = "/"
-healthcheckTimeout = 300
-restartPolicyType = "on_failure"
-restartPolicyMaxRetries = 10
-
-[deploy.envs]
-NODE_ENV = "production"
+startCommand = "npm start"
