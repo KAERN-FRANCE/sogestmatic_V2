@@ -158,17 +158,8 @@ export class AuthService {
         const user = JSON.parse(userData)
         this.state = { user, isLoading: false }
       } else {
-        // Mode développement : auto-connexion avec utilisateur admin mock
-        const devUser: User = {
-          id: "dev-user",
-          name: "Développeur",
-          email: "dev@sogestmatic.com",
-          role: "admin",
-          createdAt: new Date().toISOString(),
-        }
-        localStorage.setItem("sogestmatic_user", JSON.stringify(devUser))
-        this.state = { user: devUser, isLoading: false }
-        console.info("[Auth] Utilisateur de développement créé automatiquement")
+        // Pas d'utilisateur connecté
+        this.state = { user: null, isLoading: false }
       }
     } catch {
       this.state = { user: null, isLoading: false }
