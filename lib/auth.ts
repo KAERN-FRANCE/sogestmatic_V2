@@ -67,7 +67,16 @@ const MOCK_USERS = [
 ]
 
 function isFirebaseEnabled() {
-  return typeof window !== "undefined" && process.env.NEXT_PUBLIC_USE_FIREBASE === "true"
+  const enabled = typeof window !== "undefined" && process.env.NEXT_PUBLIC_USE_FIREBASE === "true"
+  if (typeof window !== "undefined") {
+    console.info("[Auth] Firebase enabled check:", {
+      enabled,
+      USE_FIREBASE: process.env.NEXT_PUBLIC_USE_FIREBASE,
+      hasApiKey: !!process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+      hasProjectId: !!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+    })
+  }
+  return enabled
 }
 
 function getFirebaseApp() {
@@ -79,7 +88,18 @@ function getFirebaseApp() {
     messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
     appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
   }
+
+  // Vérifier que les variables essentielles sont présentes
+  if (!config.apiKey || !config.projectId) {
+    console.error("[Auth] Configuration Firebase manquante:", {
+      hasApiKey: !!config.apiKey,
+      hasProjectId: !!config.projectId,
+      hasAuthDomain: !!config.authDomain,
+    })
+  }
+
   if (!getApps().length) {
+    console.info("[Auth] Initialisation Firebase avec projectId:", config.projectId)
     return initializeApp(config)
   }
   return getApps()[0]!
