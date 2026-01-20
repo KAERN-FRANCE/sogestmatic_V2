@@ -70,15 +70,9 @@ async function loadConfig() {
     .then(res => res.json())
     .then(config => {
       cachedConfig = config
-      console.info("[Auth] Configuration chargée depuis API:", {
-        useFirebase: config.useFirebase,
-        hasApiKey: !!config.firebase?.apiKey,
-        projectId: config.firebase?.projectId,
-      })
       return config
     })
-    .catch(err => {
-      console.error("[Auth] Erreur chargement config:", err)
+    .catch(() => {
       return null
     })
 
@@ -111,16 +105,10 @@ function getFirebaseApp(config: NonNullable<typeof cachedConfig>['firebase']) {
   if (firebaseApp) return firebaseApp
 
   if (!config.apiKey || !config.projectId) {
-    console.error("[Auth] Configuration Firebase manquante:", {
-      hasApiKey: !!config.apiKey,
-      hasProjectId: !!config.projectId,
-      hasAuthDomain: !!config.authDomain,
-    })
     throw new Error("Configuration Firebase incomplète")
   }
 
   if (!getApps().length) {
-    console.info("[Auth] Initialisation Firebase avec projectId:", config.projectId)
     firebaseApp = initializeApp(config)
   } else {
     firebaseApp = getApps()[0]!
@@ -170,7 +158,6 @@ export class AuthService {
       this.configLoaded = true
 
       if (config?.useFirebase && config.firebase?.apiKey) {
-        console.info("[Auth] Firebase activé", { projectId: config.firebase.projectId })
         const app = getFirebaseApp(config.firebase)
         const auth = getAuth(app)
         onAuthStateChanged(auth, async (fbUser) => {
@@ -183,11 +170,9 @@ export class AuthService {
           this.notify()
         })
       } else {
-        console.info("[Auth] Mode mock (Firebase désactivé)")
         this.loadUserFromStorage()
       }
-    } catch (err) {
-      console.error("[Auth] Erreur initialisation:", err)
+    } catch {
       this.loadUserFromStorage()
     }
   }
@@ -274,7 +259,6 @@ export class AuthService {
         this.notify()
         return { success: true }
       } catch (e: any) {
-        console.error("[Auth] login Firebase error", e)
         this.state = { user: null, isLoading: false }
         this.notify()
         return { success: false, error: e?.message || "Échec de la connexion" }
@@ -316,7 +300,6 @@ export class AuthService {
         const app = this.getApp()
         const auth = getAuth(app)
         const db = getFirestore(app)
-        console.info("[Auth] register via Firebase", { projectId: cachedConfig?.firebase?.projectId })
         const cred = await createUserWithEmailAndPassword(auth, email, password)
         if (auth.currentUser) {
           await updateProfile(auth.currentUser, { displayName: name })
@@ -334,7 +317,6 @@ export class AuthService {
         this.notify()
         return { success: true }
       } catch (e: any) {
-        console.error("[Auth] register Firebase error", e)
         this.state = { user: null, isLoading: false }
         this.notify()
         return { success: false, error: e?.message || "Échec de l'inscription" }

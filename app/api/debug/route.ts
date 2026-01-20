@@ -12,17 +12,13 @@ export async function GET(_request: NextRequest) {
       embeddingModel: process.env.EMBEDDING_MODEL || 'text-embedding-3-small (défaut)',
       systemInstructions: process.env.SYSTEM_INSTRUCTIONS ? '✅ Personnalisées' : '❌ Défaut',
       firebase: {
-        enabled: process.env.NEXT_PUBLIC_USE_FIREBASE === 'true' ? '✅ Activé' : '❌ Désactivé (' + process.env.NEXT_PUBLIC_USE_FIREBASE + ')',
-        apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY
-          ? '✅ ' + process.env.NEXT_PUBLIC_FIREBASE_API_KEY.substring(0, 8) + '... (len: ' + process.env.NEXT_PUBLIC_FIREBASE_API_KEY.length + ')'
-          : '❌ Manquante',
-        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || '❌ Manquant',
-        authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || '❌ Manquant',
-        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || '❌ Manquant',
-        messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '❌ Manquant',
-        appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
-          ? '✅ ' + process.env.NEXT_PUBLIC_FIREBASE_APP_ID.substring(0, 10) + '...'
-          : '❌ Manquant',
+        enabled: process.env.NEXT_PUBLIC_USE_FIREBASE === 'true' ? '✅ Activé' : '❌ Désactivé',
+        apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY ? '✅ Configurée' : '❌ Manquante',
+        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ? '✅ Configuré' : '❌ Manquant',
+        authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ? '✅ Configuré' : '❌ Manquant',
+        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ? '✅ Configuré' : '❌ Manquant',
+        messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID ? '✅ Configuré' : '❌ Manquant',
+        appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID ? '✅ Configuré' : '❌ Manquant',
       },
       timestamp: new Date().toISOString()
     }
