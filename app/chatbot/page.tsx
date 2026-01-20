@@ -680,7 +680,7 @@ export default function ChatbotPage() {
                   return { ...c, messages: msgs }
                 }))
               } else if (data.type === 'done') {
-                accumulatedText = data.text || accumulatedText
+                // Ne pas écraser le texte accumulé - utiliser ce qui a été streamé
                 console.log(`⏱️ [STREAM] Terminé en ${((performance.now() - startTime) / 1000).toFixed(1)}s`)
               } else if (data.type === 'error') {
                 throw new Error(data.error)
