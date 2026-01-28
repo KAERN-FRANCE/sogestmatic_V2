@@ -218,30 +218,30 @@ export default function ChatbotPage() {
     }
   }, [])
 
-  // Auto-scroll vers le bas quand les messages changent
+  // Auto-scroll pendant le streaming (instantané)
   useEffect(() => {
-    if (scrollAreaRef.current) {
+    if (busy && scrollAreaRef.current) {
       const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]')
       if (scrollContainer) {
-        // Utiliser smooth scroll pour une meilleure expérience
+        // Scroll immédiat pendant le streaming pour suivre le texte en temps réel
+        scrollContainer.scrollTop = scrollContainer.scrollHeight
+      }
+    }
+  }, [busy, currentConversation?.messages])
+
+  // Auto-scroll smooth quand un nouveau message arrive (pas pendant le streaming)
+  useEffect(() => {
+    if (!busy && scrollAreaRef.current) {
+      const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]')
+      if (scrollContainer) {
+        // Utiliser smooth scroll uniquement quand ce n'est pas en streaming
         scrollContainer.scrollTo({
           top: scrollContainer.scrollHeight,
           behavior: 'smooth'
         })
       }
     }
-  }, [currentConversation?.messages, currentConversation?.messages?.length])
-
-  // Auto-scroll pendant le streaming (plus rapide)
-  useEffect(() => {
-    if (busy && scrollAreaRef.current) {
-      const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]')
-      if (scrollContainer) {
-        // Scroll immédiat pendant le streaming pour suivre le texte
-        scrollContainer.scrollTop = scrollContainer.scrollHeight
-      }
-    }
-  }, [busy, currentConversation?.messages])
+  }, [currentConversation?.messages?.length, busy])
 
   // Fonction pour générer un lien de partage
   const generateShareLink = (conversationId: string) => {
@@ -1048,6 +1048,8 @@ export default function ChatbotPage() {
                   {currentConversation.messages.map((message, index) => {
                     const isLastMessage = index === currentConversation.messages.length - 1
                     const isStreamingMessage = busy && isLastMessage && message.who === 'bot'
+                    // Les messages existants (pas le dernier ou pas en cours de streaming) n'ont pas d'animation
+                    const skipAnimation = !isStreamingMessage && message.who === 'bot'
 
                     return (
                       <ChatMessage
@@ -1056,6 +1058,7 @@ export default function ChatbotPage() {
                         html={message.html}
                         text={message.text}
                         isStreaming={isStreamingMessage}
+                        skipAnimation={skipAnimation}
                       />
                     )
                   })}

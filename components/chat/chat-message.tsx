@@ -9,11 +9,12 @@ interface ChatMessageProps {
   html: string
   text: string
   isStreaming?: boolean
+  skipAnimation?: boolean
 }
 
-export function ChatMessage({ who, html, text, isStreaming = false }: ChatMessageProps) {
+export function ChatMessage({ who, html, text, isStreaming = false, skipAnimation = false }: ChatMessageProps) {
   const [copied, setCopied] = useState(false)
-  const [displayedHtml, setDisplayedHtml] = useState("")
+  const [displayedHtml, setDisplayedHtml] = useState(skipAnimation ? html : "")
   const [isTyping, setIsTyping] = useState(false)
   const animationRef = useRef<NodeJS.Timeout | null>(null)
   const targetHtmlRef = useRef("")
@@ -51,6 +52,12 @@ export function ChatMessage({ who, html, text, isStreaming = false }: ChatMessag
   useEffect(() => {
     // Pour l'utilisateur, afficher directement
     if (isUser) {
+      setDisplayedHtml(html)
+      return
+    }
+
+    // Si on doit sauter l'animation (message déjà existant), afficher directement
+    if (skipAnimation) {
       setDisplayedHtml(html)
       return
     }
@@ -105,7 +112,7 @@ export function ChatMessage({ who, html, text, isStreaming = false }: ChatMessag
         clearInterval(animationRef.current)
       }
     }
-  }, [html, isStreaming, isUser])
+  }, [html, isStreaming, isUser, skipAnimation])
 
   const copyToClipboard = async () => {
     try {
