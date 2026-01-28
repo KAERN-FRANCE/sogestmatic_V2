@@ -245,19 +245,21 @@ export default function ChatbotPage() {
 
   // Scroll vers le bas quand on change de conversation
   useEffect(() => {
-    if (currentConversationId && scrollAreaRef.current) {
+    if (currentConversation && currentConversation.messages.length > 0 && scrollAreaRef.current) {
       const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]')
       if (scrollContainer) {
-        // Petit délai pour laisser les messages se charger
-        setTimeout(() => {
-          scrollContainer.scrollTo({
-            top: scrollContainer.scrollHeight,
-            behavior: 'smooth'
+        // Utiliser requestAnimationFrame pour attendre que le DOM soit mis à jour
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            scrollContainer.scrollTo({
+              top: scrollContainer.scrollHeight,
+              behavior: 'auto' // Scroll instantané pour éviter l'effet de "voyage"
+            })
           })
-        }, 100)
+        })
       }
     }
-  }, [currentConversationId])
+  }, [currentConversationId, currentConversation?.messages.length])
 
   // Fonction pour générer un lien de partage
   const generateShareLink = (conversationId: string) => {
