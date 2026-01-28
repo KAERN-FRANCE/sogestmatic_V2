@@ -238,15 +238,30 @@ export default function ChatbotPage() {
     }
   }, [])
 
-  // Auto-scroll vers le bas quand l'IA commence à réfléchir
+  // Auto-scroll vers le bas quand les messages changent
+  useEffect(() => {
+    if (scrollAreaRef.current) {
+      const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]')
+      if (scrollContainer) {
+        // Utiliser smooth scroll pour une meilleure expérience
+        scrollContainer.scrollTo({
+          top: scrollContainer.scrollHeight,
+          behavior: 'smooth'
+        })
+      }
+    }
+  }, [currentConversation?.messages, currentConversation?.messages?.length])
+
+  // Auto-scroll pendant le streaming (plus rapide)
   useEffect(() => {
     if (busy && scrollAreaRef.current) {
       const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]')
       if (scrollContainer) {
+        // Scroll immédiat pendant le streaming pour suivre le texte
         scrollContainer.scrollTop = scrollContainer.scrollHeight
       }
     }
-  }, [busy])
+  }, [busy, currentConversation?.messages])
 
   // Fonction pour générer un lien de partage
   const generateShareLink = (conversationId: string) => {
