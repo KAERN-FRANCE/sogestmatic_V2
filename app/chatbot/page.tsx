@@ -243,6 +243,22 @@ export default function ChatbotPage() {
     }
   }, [currentConversation?.messages?.length, busy])
 
+  // Scroll vers le bas quand on change de conversation
+  useEffect(() => {
+    if (currentConversationId && scrollAreaRef.current) {
+      const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]')
+      if (scrollContainer) {
+        // Petit délai pour laisser les messages se charger
+        setTimeout(() => {
+          scrollContainer.scrollTo({
+            top: scrollContainer.scrollHeight,
+            behavior: 'smooth'
+          })
+        }, 100)
+      }
+    }
+  }, [currentConversationId])
+
   // Fonction pour générer un lien de partage
   const generateShareLink = (conversationId: string) => {
     const baseUrl = window.location.origin
