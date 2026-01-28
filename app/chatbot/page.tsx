@@ -10,28 +10,8 @@ import { ChatMessage } from "@/components/chat/chat-message"
 import { useAuth } from "@/hooks/use-auth"
 import { useRouter } from "next/navigation"
 import { MessageLimitService } from "@/lib/message-limits"
-
-// Vérifier si Firebase est activé
-const isFirebaseEnabled = () => typeof window !== "undefined" && process.env.NEXT_PUBLIC_USE_FIREBASE === "true"
-
-// Configuration Firebase (chargement conditionnel)
-let db: any = null
-if (typeof window !== "undefined" && isFirebaseEnabled()) {
-  import("firebase/app").then(({ initializeApp }) => {
-    import("firebase/firestore").then(({ getFirestore }) => {
-      const firebaseConfig = {
-        apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-        authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-        messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-        appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-      }
-      const app = initializeApp(firebaseConfig)
-      db = getFirestore(app)
-    })
-  })
-}
+import { getFirebaseInstance } from "@/lib/firebase"
+import { collection, query, where, getDocs, doc, setDoc, updateDoc, deleteDoc } from "firebase/firestore"
 
 // Fonctions de stockage local pour le mode développement
 const localStorageKey = "sogestmatic_conversations"
@@ -409,22 +389,24 @@ export default function ChatbotPage() {
       try {
         let loadedConversations: Conversation[] = []
 
-        if (isFirebaseEnabled() && db) {
+        const firebase = await getFirebaseInstance()
+
+        if (firebase) {
           // Mode Firebase
-          const { collection, query, where, getDocs } = await import("firebase/firestore")
-          const conversationsRef = collection(db, 'conversations')
+          const conversationsRef = collection(firebase.db, 'conversations')
           const q = query(conversationsRef, where('userId', '==', user.id))
           const querySnapshot = await getDocs(q)
 
-          querySnapshot.forEach((doc: any) => {
-            const data = doc.data()
+          querySnapshot.forEach((docSnap: any) => {
+            const data = docSnap.data()
             loadedConversations.push({
-              id: doc.id,
+              id: docSnap.id,
               title: data.title,
               messages: data.messages || [],
               timestamp: data.timestamp?.toDate() || new Date()
             })
           })
+          console.log('[Chatbot] Conversations chargées depuis Firebase:', loadedConversations.length)
         } else {
           // Mode localStorage (développement)
           const localData = getLocalConversations()
@@ -436,6 +418,7 @@ export default function ChatbotPage() {
               messages: c.messages || [],
               timestamp: new Date(c.timestamp)
             }))
+          console.log('[Chatbot] Conversations chargées depuis localStorage:', loadedConversations.length)
         }
 
         // Trier par date (plus récent en premier)
@@ -491,9 +474,10 @@ export default function ChatbotPage() {
     if (!user) return
 
     try {
-      if (isFirebaseEnabled() && db) {
-        const { doc, setDoc } = await import("firebase/firestore")
-        const conversationRef = doc(db, 'conversations', conversation.id)
+      const firebase = await getFirebaseInstance()
+
+      if (firebase) {
+        const conversationRef = doc(firebase.db, 'conversations', conversation.id)
         await setDoc(conversationRef, {
           userId: user.id,
           title: conversation.title,
@@ -501,6 +485,7 @@ export default function ChatbotPage() {
           timestamp: conversation.timestamp,
           updatedAt: new Date()
         })
+        console.log('[Chatbot] Conversation sauvegardée dans Firebase:', conversation.id)
       } else {
         // Mode localStorage
         const allConversations = getLocalConversations()
@@ -514,6 +499,7 @@ export default function ChatbotPage() {
         }
         allConversations.push(newConv)
         saveLocalConversations(allConversations)
+        console.log('[Chatbot] Conversation sauvegardée dans localStorage:', conversation.id)
       }
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error)
@@ -525,13 +511,15 @@ export default function ChatbotPage() {
     if (!user) return
 
     try {
-      if (isFirebaseEnabled() && db) {
-        const { doc, updateDoc } = await import("firebase/firestore")
-        const conversationRef = doc(db, 'conversations', conversationId)
+      const firebase = await getFirebaseInstance()
+
+      if (firebase) {
+        const conversationRef = doc(firebase.db, 'conversations', conversationId)
         await updateDoc(conversationRef, {
           ...updates,
           updatedAt: new Date()
         })
+        console.log('[Chatbot] Conversation mise à jour dans Firebase:', conversationId)
       } else {
         // Mode localStorage
         const allConversations = getLocalConversations()
@@ -544,6 +532,7 @@ export default function ChatbotPage() {
             updatedAt: new Date().toISOString()
           }
           saveLocalConversations(allConversations)
+          console.log('[Chatbot] Conversation mise à jour dans localStorage:', conversationId)
         }
       }
     } catch (error) {
@@ -556,15 +545,18 @@ export default function ChatbotPage() {
     if (!user) return
 
     try {
-      if (isFirebaseEnabled() && db) {
-        const { doc, deleteDoc } = await import("firebase/firestore")
-        const conversationRef = doc(db, 'conversations', conversationId)
+      const firebase = await getFirebaseInstance()
+
+      if (firebase) {
+        const conversationRef = doc(firebase.db, 'conversations', conversationId)
         await deleteDoc(conversationRef)
+        console.log('[Chatbot] Conversation supprimée de Firebase:', conversationId)
       } else {
         // Mode localStorage
         const allConversations = getLocalConversations()
         const filtered = allConversations.filter((c: any) => c.id !== conversationId)
         saveLocalConversations(filtered)
+        console.log('[Chatbot] Conversation supprimée de localStorage:', conversationId)
       }
     } catch (error) {
       console.error('Erreur lors de la suppression:', error)
