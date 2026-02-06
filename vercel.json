@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/update-indicators",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/update-regulations",
+      "schedule": "0 6 * * *"
+    }
+  ]
+}
