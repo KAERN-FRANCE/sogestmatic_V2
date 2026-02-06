@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Input } from "@/components/ui/input"
-import { Plus, MessageSquare, Trash2, Send, Lock, AlertCircle, Search, Share2, Copy, X, Edit2, ChevronLeft, ChevronRight, Mic, MicOff } from "lucide-react"
+import { Plus, MessageSquare, Trash2, Send, Lock, AlertCircle, Search, Share2, Copy, X, Edit2, ChevronLeft, ChevronRight, Mic, MicOff, ArrowDown } from "lucide-react"
 import { ChatMessage } from "@/components/chat/chat-message"
 import { useAuth } from "@/hooks/use-auth"
 import { useRouter } from "next/navigation"
@@ -169,6 +169,7 @@ export default function ChatbotPage() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true)
   const [isListening, setIsListening] = useState(false)
   const [speechSupported, setSpeechSupported] = useState(false)
+  const [showScrollButton, setShowScrollButton] = useState(false)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const sidebarRef = useRef<HTMLDivElement>(null)
 
@@ -218,48 +219,47 @@ export default function ChatbotPage() {
     }
   }, [])
 
-  // Auto-scroll pendant le streaming (instantané)
+  // Auto-scroll pendant le streaming (pour suivre la réponse en temps réel)
   useEffect(() => {
     if (busy && scrollAreaRef.current) {
       const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]')
       if (scrollContainer) {
-        // Scroll immédiat pendant le streaming pour suivre le texte en temps réel
         scrollContainer.scrollTop = scrollContainer.scrollHeight
       }
     }
   }, [busy, currentConversation?.messages])
 
-  // Auto-scroll smooth quand un nouveau message arrive (pas pendant le streaming)
+  // Détecter si l'utilisateur est en bas du scroll (pour afficher la flèche)
   useEffect(() => {
-    if (!busy && scrollAreaRef.current) {
-      const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]')
-      if (scrollContainer) {
-        // Utiliser smooth scroll uniquement quand ce n'est pas en streaming
-        scrollContainer.scrollTo({
-          top: scrollContainer.scrollHeight,
-          behavior: 'smooth'
-        })
-      }
-    }
-  }, [currentConversation?.messages?.length, busy])
+    if (!scrollAreaRef.current) return
 
-  // Scroll vers le bas quand on change de conversation
-  useEffect(() => {
-    if (currentConversation && currentConversation.messages.length > 0 && scrollAreaRef.current) {
-      const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]')
-      if (scrollContainer) {
-        // Utiliser setTimeout pour attendre que le DOM soit complètement rendu
-        const timer = setTimeout(() => {
-          scrollContainer.scrollTo({
-            top: scrollContainer.scrollHeight,
-            behavior: 'auto' // Scroll instantané pour éviter l'effet de "voyage"
-          })
-        }, 50)
+    const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]')
+    if (!scrollContainer) return
 
-        return () => clearTimeout(timer)
-      }
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = scrollContainer
+      const isAtBottom = scrollHeight - scrollTop - clientHeight < 100
+      setShowScrollButton(!isAtBottom)
     }
-  }, [currentConversationId])
+
+    scrollContainer.addEventListener('scroll', handleScroll)
+    // Check initial state
+    handleScroll()
+
+    return () => scrollContainer.removeEventListener('scroll', handleScroll)
+  }, [currentConversationId, currentConversation?.messages?.length])
+
+  // Fonction pour scroller vers le bas
+  const scrollToBottom = () => {
+    if (!scrollAreaRef.current) return
+    const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]')
+    if (scrollContainer) {
+      scrollContainer.scrollTo({
+        top: scrollContainer.scrollHeight,
+        behavior: 'smooth'
+      })
+    }
+  }
 
   // Fonction pour générer un lien de partage
   const generateShareLink = (conversationId: string) => {
@@ -1060,7 +1060,7 @@ export default function ChatbotPage() {
         {currentConversation ? (
           <>
             {/* Zone des messages - style ChatGPT */}
-            <div className="flex-1 overflow-hidden bg-background">
+            <div className="flex-1 overflow-hidden bg-background relative">
               <ScrollArea ref={scrollAreaRef} className="h-full">
                 <div className="pb-4">
                   {currentConversation.messages.map((message, index) => {
@@ -1082,6 +1082,17 @@ export default function ChatbotPage() {
                   })}
                 </div>
               </ScrollArea>
+
+              {/* Bouton flottant pour descendre en bas */}
+              {showScrollButton && (
+                <button
+                  onClick={scrollToBottom}
+                  className="absolute bottom-4 right-6 p-3 bg-green-accent hover:bg-green-accent-dark text-white rounded-full shadow-lg transition-all hover:scale-110 z-10"
+                  title="Aller en bas de la conversation"
+                >
+                  <ArrowDown className="w-5 h-5" />
+                </button>
+              )}
             </div>
 
             {/* Zone de saisie - style ChatGPT */}
