@@ -229,21 +229,17 @@ export default function ChatbotPage() {
     }
   }, [busy, currentConversation?.messages])
 
-  // Afficher la flèche quand on ouvre une conversation avec des messages
+  // Auto-scroll vers le bas quand on ouvre une conversation
   useEffect(() => {
     if (currentConversation && currentConversation.messages.length > 0) {
-      // Attendre que le DOM soit rendu puis vérifier s'il y a du contenu à scroller
+      // Attendre que le DOM soit rendu puis scroller en bas
       const timer = setTimeout(() => {
         if (!scrollAreaRef.current) return
         const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]')
         if (scrollContainer) {
-          const { scrollHeight, clientHeight } = scrollContainer
-          // Afficher le bouton s'il y a plus de contenu que visible
-          if (scrollHeight > clientHeight + 100) {
-            setShowScrollButton(true)
-          }
+          scrollContainer.scrollTop = scrollContainer.scrollHeight
         }
-      }, 100)
+      }, 50)
       return () => clearTimeout(timer)
     }
   }, [currentConversationId])
