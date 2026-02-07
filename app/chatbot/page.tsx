@@ -1087,7 +1087,7 @@ export default function ChatbotPage() {
               {showScrollButton && (
                 <button
                   onClick={scrollToBottom}
-                  className="absolute bottom-4 right-6 p-3 bg-green-accent hover:bg-green-accent-dark text-white rounded-full shadow-lg transition-all hover:scale-110 z-10"
+                  className="absolute bottom-4 left-1/2 -translate-x-1/2 p-3 bg-green-accent hover:bg-green-accent-dark text-white rounded-full shadow-lg transition-all hover:scale-110 z-10"
                   title="Aller en bas de la conversation"
                 >
                   <ArrowDown className="w-5 h-5" />
