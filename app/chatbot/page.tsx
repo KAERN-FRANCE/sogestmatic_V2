@@ -229,7 +229,26 @@ export default function ChatbotPage() {
     }
   }, [busy, currentConversation?.messages])
 
-  // Détecter si l'utilisateur est en bas du scroll (pour afficher la flèche)
+  // Afficher la flèche quand on ouvre une conversation avec des messages
+  useEffect(() => {
+    if (currentConversation && currentConversation.messages.length > 0) {
+      // Attendre que le DOM soit rendu puis vérifier s'il y a du contenu à scroller
+      const timer = setTimeout(() => {
+        if (!scrollAreaRef.current) return
+        const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]')
+        if (scrollContainer) {
+          const { scrollHeight, clientHeight } = scrollContainer
+          // Afficher le bouton s'il y a plus de contenu que visible
+          if (scrollHeight > clientHeight + 100) {
+            setShowScrollButton(true)
+          }
+        }
+      }, 100)
+      return () => clearTimeout(timer)
+    }
+  }, [currentConversationId])
+
+  // Détecter si l'utilisateur est en bas du scroll (pour afficher/masquer la flèche)
   useEffect(() => {
     if (!scrollAreaRef.current) return
 
@@ -243,8 +262,6 @@ export default function ChatbotPage() {
     }
 
     scrollContainer.addEventListener('scroll', handleScroll)
-    // Check initial state
-    handleScroll()
 
     return () => scrollContainer.removeEventListener('scroll', handleScroll)
   }, [currentConversationId, currentConversation?.messages?.length])
