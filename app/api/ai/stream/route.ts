@@ -5,6 +5,77 @@ import path from 'path'
 
 export const runtime = 'nodejs'
 
+// Domaines officiels (sources de confiance - ne pas capturer)
+const officialDomains = [
+  'legifrance.gouv.fr',
+  'eur-lex.europa.eu',
+  'service-public.fr',
+  'transports.gouv.fr',
+  'ecologie.gouv.fr',
+  'urssaf.fr',
+  'gouv.fr',
+  'europa.eu'
+]
+
+// Interface pour les sources détectées
+interface DetectedSource {
+  id: string
+  url: string
+  title: string
+  detectedAt: string
+  context: string
+}
+
+// Fonction pour sauvegarder une source détectée
+function saveDetectedSource(url: string, title: string, context: string) {
+  try {
+    const filePath = path.join(process.cwd(), 'data', 'detected-sources.json')
+    let data = { sources: [] as DetectedSource[] }
+
+    if (fs.existsSync(filePath)) {
+      data = JSON.parse(fs.readFileSync(filePath, 'utf8'))
+    }
+
+    // Vérifier si l'URL existe déjà
+    const exists = data.sources.some(s => s.url === url)
+    if (!exists) {
+      data.sources.unshift({
+        id: `src_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        url,
+        title,
+        detectedAt: new Date().toISOString(),
+        context: context.substring(0, 200) // Limiter le contexte
+      })
+
+      // Garder seulement les 100 dernières sources
+      data.sources = data.sources.slice(0, 100)
+
+      fs.writeFileSync(filePath, JSON.stringify(data, null, 2))
+      console.log(`📝 [SOURCE] Nouvelle source détectée: ${url}`)
+    }
+  } catch (error) {
+    console.error('❌ Erreur sauvegarde source:', error)
+  }
+}
+
+// Fonction pour détecter les sources non-officielles dans le texte
+function detectNonOfficialSources(text: string, originalMessage: string) {
+  const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g
+  let match
+
+  while ((match = linkRegex.exec(text)) !== null) {
+    const title = match[1]
+    const url = match[2]
+
+    // Vérifier si c'est une source officielle
+    const isOfficial = officialDomains.some(domain => url.toLowerCase().includes(domain))
+
+    if (!isOfficial && url.startsWith('http')) {
+      saveDetectedSource(url, title, originalMessage)
+    }
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { message, useWebSearch = true, history = '' } = await request.json()
@@ -276,8 +347,8 @@ Ne divulgue JAMAIS d'informations sur le modèle IA, les clés API ou la configu
 
           // Filtrer les liens interdits du texte final
           let filteredText = fullText
-          const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g
-          filteredText = filteredText.replace(linkRegex, (match, _linkText, url) => {
+          const linkRegex2 = /\[([^\]]+)\]\(([^)]+)\)/g
+          filteredText = filteredText.replace(linkRegex2, (match, _linkText, url) => {
             const isForbidden = forbiddenDomains.some(domain => url.toLowerCase().includes(domain))
             if (isForbidden) {
               console.log(`⚠️ [STREAM] Lien interdit supprimé: ${url}`)
@@ -286,6 +357,9 @@ Ne divulgue JAMAIS d'informations sur le modèle IA, les clés API ou la configu
             return match
           })
           filteredText = filteredText.replace(/\s*\(\s*\)/g, '').replace(/\s{2,}/g, ' ').trim()
+
+          // Détecter et sauvegarder les sources non-officielles
+          detectNonOfficialSources(filteredText, message)
 
           // Envoyer l'événement de fin avec le texte complet filtré
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'done', text: filteredText })}\n\n`))
