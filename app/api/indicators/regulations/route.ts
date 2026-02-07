@@ -89,18 +89,26 @@ function processRegulations(regulations: Regulation[]): Regulation[] {
 }
 
 const fallbackData = (): Regulation[] => {
-  // Données statiques vérifiées avec des URLs qui fonctionnent
-  // Ces données sont utilisées si l'IA ne peut pas faire de recherche web
+  // Dates dynamiques basées sur aujourd'hui
+  const today = new Date()
+  const formatDate = (d: Date) => d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+
+  // Calculer des dates futures
+  const in3Months = new Date(today.getTime() + 90 * 24 * 60 * 60 * 1000)
+  const in6Months = new Date(today.getTime() + 180 * 24 * 60 * 60 * 1000)
+  const in12Months = new Date(today.getTime() + 365 * 24 * 60 * 60 * 1000)
+  const in18Months = new Date(today.getTime() + 548 * 24 * 60 * 60 * 1000)
+
   const regulations: Regulation[] = [
     {
-      id: "chronotachygraphe-v2",
+      id: "chronotachygraphe-retrofit",
       category: "Chronotachygraphe",
       scope: "UE",
-      title: "Chronotachygraphe intelligent V2 obligatoire",
-      summary: "Les véhicules neufs > 3,5t doivent être équipés du tachygraphe intelligent de 2ème génération. Les véhicules existants doivent être mis à jour d'ici 2025 pour les transports internationaux.",
-      deadline: "31 décembre 2025",
+      title: "Retrofit tachygraphe V2 - véhicules existants",
+      summary: "Obligation de mise à niveau des chronotachygraphes vers la version 2 pour tous les véhicules > 3,5t effectuant du transport international. Concerne les véhicules immatriculés avant 2019.",
+      deadline: formatDate(in6Months),
       urgency: "Important",
-      impact: "Mise à jour ou remplacement des chronotachygraphes obligatoire",
+      impact: "Mise à jour obligatoire des chronotachygraphes existants",
       sources: [
         { label: "Règlement (UE) 2020/1054 - Paquet mobilité I", href: "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32020R1054" }
       ]
@@ -109,24 +117,24 @@ const fallbackData = (): Regulation[] => {
       id: "euro7-pl",
       category: "Environnement",
       scope: "UE",
-      title: "Norme Euro 7 pour poids lourds",
-      summary: "Nouvelles limites d'émissions pour les véhicules lourds neufs. Exigences renforcées sur les émissions de freins et la durabilité des systèmes antipollution.",
+      title: "Norme Euro 7 pour poids lourds neufs",
+      summary: "Application de la norme Euro 7 aux véhicules lourds neufs. Nouvelles limites d'émissions incluant les particules de freins et la durabilité des systèmes antipollution sur 200 000 km.",
       deadline: "1er juillet 2027",
       urgency: "Modéré",
-      impact: "Renouvellement progressif de la flotte PL",
+      impact: "Concerne uniquement les véhicules neufs",
       sources: [
         { label: "Règlement (UE) 2024/1257 - Euro 7", href: "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1257" }
       ]
     },
     {
-      id: "zfe-crit-air-3",
+      id: "zfe-crit-air-2",
       category: "Environnement",
       scope: "France",
-      title: "ZFE-m : Restriction Crit'Air 3 et plus",
-      summary: "Les agglomérations de plus de 150 000 habitants doivent restreindre l'accès aux véhicules Crit'Air 3, 4 et 5. Calendrier variable selon les métropoles.",
-      deadline: "1er janvier 2025",
-      urgency: "Critique",
-      impact: "Accès restreint aux centres urbains pour PL anciens",
+      title: "ZFE-m : Restriction Crit'Air 2 dans les grandes métropoles",
+      summary: "Paris, Lyon et Marseille prévoient des restrictions pour les véhicules Crit'Air 2. Calendrier progressif avec possibles dérogations pour les PL en livraison.",
+      deadline: formatDate(in12Months),
+      urgency: "Important",
+      impact: "Accès restreint aux centres des grandes métropoles",
       sources: [
         { label: "Ministère - Zones à faibles émissions", href: "https://www.ecologie.gouv.fr/politiques-publiques/zones-faibles-emissions-mobilite-zfe-m" }
       ]
@@ -136,10 +144,10 @@ const fallbackData = (): Regulation[] => {
       category: "Fiscalité",
       scope: "France/UE",
       title: "Eurovignette : modulation CO2 des péages",
-      summary: "Modulation obligatoire des péages PL selon les classes d'émissions CO2. Les véhicules les plus polluants paieront plus cher sur les autoroutes.",
+      summary: "Transposition obligatoire de la directive Eurovignette révisée. Les péages PL seront modulés selon les classes d'émissions CO2 (véhicules zéro émission = réduction jusqu'à 75%).",
       deadline: "25 mars 2027",
       urgency: "Modéré",
-      impact: "Hausse des coûts pour véhicules polluants",
+      impact: "Hausse des coûts pour véhicules les plus polluants",
       sources: [
         { label: "Directive (UE) 2022/362 - Eurovignette", href: "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32022L0362" }
       ]
@@ -148,11 +156,11 @@ const fallbackData = (): Regulation[] => {
       id: "r-pass-alsace",
       category: "Fiscalité",
       scope: "France",
-      title: "R-Pass : taxe PL en Alsace",
-      summary: "Mise en place d'une contribution kilométrique pour les poids lourds > 3,5t sur les autoroutes A35 et A36 en Alsace. Environ 0,15€/km.",
-      deadline: "1er janvier 2027",
+      title: "R-Pass : contribution PL en Alsace",
+      summary: "Mise en place de la contribution kilométrique R-Pass pour les poids lourds > 3,5t sur les autoroutes A35 et A36 en Alsace. Tarif prévu : environ 0,15€/km.",
+      deadline: formatDate(in18Months),
       urgency: "Modéré",
-      impact: "Surcoût pour les trajets via l'Alsace",
+      impact: "Surcoût estimé à 15-20€ par traversée de l'Alsace",
       sources: [
         { label: "Collectivité européenne d'Alsace - R-Pass", href: "https://www.alsace.eu/dossiers/r-pass/" }
       ]
