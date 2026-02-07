@@ -89,80 +89,84 @@ function processRegulations(regulations: Regulation[]): Regulation[] {
 }
 
 const fallbackData = (): Regulation[] => {
-  // Dates dynamiques basées sur aujourd'hui
-  const today = new Date()
-  const formatDate = (d: Date) => d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
-
-  // Calculer des dates futures
-  const in3Months = new Date(today.getTime() + 90 * 24 * 60 * 60 * 1000)
-  const in6Months = new Date(today.getTime() + 180 * 24 * 60 * 60 * 1000)
-  const in12Months = new Date(today.getTime() + 365 * 24 * 60 * 60 * 1000)
-  const in18Months = new Date(today.getTime() + 548 * 24 * 60 * 60 * 1000)
-
+  // Données réelles vérifiées - Sources officielles
   const regulations: Regulation[] = [
     {
-      id: "chronotachygraphe-retrofit",
+      id: "chronotachygraphe-vul-2026",
       category: "Chronotachygraphe",
       scope: "UE",
-      title: "Retrofit tachygraphe V2 - véhicules existants",
-      summary: "Obligation de mise à niveau des chronotachygraphes vers la version 2 pour tous les véhicules > 3,5t effectuant du transport international. Concerne les véhicules immatriculés avant 2019.",
-      deadline: formatDate(in6Months),
+      title: "Chronotachygraphe obligatoire VUL 2,5-3,5t",
+      summary: "Les véhicules utilitaires légers de 2,5 à 3,5 tonnes effectuant du transport international ou du cabotage devront être équipés d'un chronotachygraphe intelligent V2 (G2V2). Exemption pour les artisans dans un rayon de 100 km.",
+      deadline: "1er juillet 2026",
       urgency: "Important",
-      impact: "Mise à jour obligatoire des chronotachygraphes existants",
+      impact: "Installation obligatoire pour les VUL en transport international",
       sources: [
         { label: "Règlement (UE) 2020/1054 - Paquet mobilité I", href: "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32020R1054" }
       ]
     },
     {
-      id: "euro7-pl",
+      id: "euro7-vp-vul-2026",
       category: "Environnement",
       scope: "UE",
-      title: "Norme Euro 7 pour poids lourds neufs",
-      summary: "Application de la norme Euro 7 aux véhicules lourds neufs. Nouvelles limites d'émissions incluant les particules de freins et la durabilité des systèmes antipollution sur 200 000 km.",
-      deadline: "1er juillet 2027",
+      title: "Norme Euro 7 - Nouveaux modèles VP/VUL",
+      summary: "Entrée en vigueur de la norme Euro 7 pour les nouveaux modèles de voitures particulières et véhicules utilitaires légers. Nouvelles limites d'émissions incluant les particules de freins.",
+      deadline: "29 novembre 2026",
       urgency: "Modéré",
-      impact: "Concerne uniquement les véhicules neufs",
+      impact: "Concerne les constructeurs pour l'homologation des nouveaux modèles",
       sources: [
         { label: "Règlement (UE) 2024/1257 - Euro 7", href: "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1257" }
       ]
     },
     {
-      id: "zfe-crit-air-2",
+      id: "r-pass-alsace-2027",
+      category: "Fiscalité",
+      scope: "France",
+      title: "R-Pass : taxe kilométrique PL en Alsace",
+      summary: "Mise en place de la contribution kilométrique R-Pass pour les poids lourds > 3,5t sur l'A35 et l'A36 non concédée. Tarifs modulés selon le poids et la motorisation : de 7,1 ct/km (Euro 7, <12t) à 34,5 ct/km (Euro 0, >32t).",
+      deadline: "1er janvier 2027",
+      urgency: "Important",
+      impact: "Surcoût variable selon le véhicule pour les trajets via l'Alsace",
+      sources: [
+        { label: "Collectivité européenne d'Alsace - R-Pass", href: "https://www.alsace.eu/aides-et-services/mobilite-et-transport/r-pass-taxe-poids-lourds-pour-trafic-en-transit/" }
+      ]
+    },
+    {
+      id: "zfe-crit-air-3-2027",
       category: "Environnement",
       scope: "France",
-      title: "ZFE-m : Restriction Crit'Air 2 dans les grandes métropoles",
-      summary: "Paris, Lyon et Marseille prévoient des restrictions pour les véhicules Crit'Air 2. Calendrier progressif avec possibles dérogations pour les PL en livraison.",
-      deadline: formatDate(in12Months),
+      title: "ZFE : Interdiction Crit'Air 3 dans certaines métropoles",
+      summary: "Extension des restrictions ZFE aux véhicules Crit'Air 3 dans plusieurs métropoles (Saint-Étienne, etc.). Les poids lourds et utilitaires Crit'Air 3, 4 et 5 seront interdits. Amende de 135€.",
+      deadline: "1er janvier 2027",
       urgency: "Important",
-      impact: "Accès restreint aux centres des grandes métropoles",
+      impact: "Accès interdit aux ZFE pour les PL Crit'Air 3 et plus",
       sources: [
         { label: "Ministère - Zones à faibles émissions", href: "https://www.ecologie.gouv.fr/politiques-publiques/zones-faibles-emissions-mobilite-zfe-m" }
       ]
     },
     {
-      id: "eurovignette-co2",
-      category: "Fiscalité",
-      scope: "France/UE",
-      title: "Eurovignette : modulation CO2 des péages",
-      summary: "Transposition obligatoire de la directive Eurovignette révisée. Les péages PL seront modulés selon les classes d'émissions CO2 (véhicules zéro émission = réduction jusqu'à 75%).",
-      deadline: "25 mars 2027",
+      id: "euro7-pl-2027",
+      category: "Environnement",
+      scope: "UE",
+      title: "Norme Euro 7 pour poids lourds neufs",
+      summary: "Application de la norme Euro 7 aux véhicules lourds neufs. Réductions significatives des émissions d'oxydes d'azote et particules fines. Durabilité des systèmes antipollution sur 200 000 km minimum.",
+      deadline: "1er juillet 2027",
       urgency: "Modéré",
-      impact: "Hausse des coûts pour véhicules les plus polluants",
+      impact: "Concerne uniquement les PL neufs mis en circulation",
       sources: [
-        { label: "Directive (UE) 2022/362 - Eurovignette", href: "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32022L0362" }
+        { label: "Règlement (UE) 2024/1257 - Euro 7", href: "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1257" }
       ]
     },
     {
-      id: "r-pass-alsace",
+      id: "eurovignette-co2-2027",
       category: "Fiscalité",
-      scope: "France",
-      title: "R-Pass : contribution PL en Alsace",
-      summary: "Mise en place de la contribution kilométrique R-Pass pour les poids lourds > 3,5t sur les autoroutes A35 et A36 en Alsace. Tarif prévu : environ 0,15€/km.",
-      deadline: formatDate(in18Months),
+      scope: "France/UE",
+      title: "Eurovignette : modulation CO2 des péages PL",
+      summary: "Transposition de la directive Eurovignette révisée. Modulation obligatoire des péages selon les classes d'émissions CO2. Réduction jusqu'à 75% pour les véhicules zéro émission.",
+      deadline: "25 mars 2027",
       urgency: "Modéré",
-      impact: "Surcoût estimé à 15-20€ par traversée de l'Alsace",
+      impact: "Hausse des péages pour véhicules polluants, baisse pour électriques",
       sources: [
-        { label: "Collectivité européenne d'Alsace - R-Pass", href: "https://www.alsace.eu/dossiers/r-pass/" }
+        { label: "Directive (UE) 2022/362 - Eurovignette", href: "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32022L0362" }
       ]
     },
   ]
