@@ -232,15 +232,15 @@ export default function ChatbotPage() {
   // Auto-scroll vers le bas quand on ouvre une conversation
   useEffect(() => {
     if (currentConversationId && currentConversation && currentConversation.messages.length > 0) {
-      // Attendre que le DOM soit complètement rendu
-      const timer = setTimeout(() => {
+      // Utiliser requestAnimationFrame pour attendre le prochain rendu
+      const frame = requestAnimationFrame(() => {
         if (!scrollAreaRef.current) return
         const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]')
         if (scrollContainer) {
           scrollContainer.scrollTop = scrollContainer.scrollHeight
         }
-      }, 200)
-      return () => clearTimeout(timer)
+      })
+      return () => cancelAnimationFrame(frame)
     }
   }, [currentConversationId, currentConversation?.messages?.length])
 
