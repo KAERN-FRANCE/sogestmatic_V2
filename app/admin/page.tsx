@@ -559,10 +559,10 @@ export default function AdminPage() {
                     <div>
                       <CardTitle className="flex items-center gap-2">
                         <Link className="h-5 w-5" />
-                        Sources détectées (non-officielles)
+                        Sources en attente de validation
                       </CardTitle>
                       <CardDescription>
-                        Sources citées par l'IA qui ne proviennent pas de sites officiels - à valider ou rejeter
+                        Sources non-officielles citées par l'IA - à approuver ou rejeter
                       </CardDescription>
                     </div>
                     {sources.filter(s => s.status === 'pending' && s.type === 'detected').length > 0 && (
@@ -583,7 +583,7 @@ export default function AdminPage() {
                     ) : sources.filter(s => s.status === 'pending' && s.type === 'detected').length === 0 ? (
                       <div className="text-center py-8 text-gray-500">
                         <Database className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                        <p className="text-lg font-medium">Aucune source détectée</p>
+                        <p className="text-lg font-medium">Aucune source en attente</p>
                         <p className="text-sm">Les sources non-officielles citées par l'IA apparaîtront ici</p>
                       </div>
                     ) : (
