@@ -26,10 +26,18 @@ interface DetectedSource {
   context: string
 }
 
+// Chemin des données (Railway Volume ou local)
+const DATA_PATH = process.env.DATA_PATH || path.join(process.cwd(), 'data')
+
 // Fonction pour sauvegarder une source détectée
 function saveDetectedSource(url: string, title: string, context: string) {
   try {
-    const filePath = path.join(process.cwd(), 'data', 'detected-sources.json')
+    // Créer le dossier si nécessaire
+    if (!fs.existsSync(DATA_PATH)) {
+      fs.mkdirSync(DATA_PATH, { recursive: true })
+    }
+
+    const filePath = path.join(DATA_PATH, 'detected-sources.json')
     let data = { sources: [] as DetectedSource[] }
 
     if (fs.existsSync(filePath)) {

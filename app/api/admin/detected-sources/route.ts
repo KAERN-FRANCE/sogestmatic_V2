@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import fs from 'fs'
 import path from 'path'
 
-const filePath = path.join(process.cwd(), 'data', 'detected-sources.json')
+// Chemin des données (Railway Volume ou local)
+const DATA_PATH = process.env.DATA_PATH || path.join(process.cwd(), 'data')
+const filePath = path.join(DATA_PATH, 'detected-sources.json')
 
 interface DetectedSource {
   id: string
@@ -12,8 +14,15 @@ interface DetectedSource {
   context: string
 }
 
+function ensureDataDir() {
+  if (!fs.existsSync(DATA_PATH)) {
+    fs.mkdirSync(DATA_PATH, { recursive: true })
+  }
+}
+
 function readSources(): DetectedSource[] {
   try {
+    ensureDataDir()
     if (fs.existsSync(filePath)) {
       const data = JSON.parse(fs.readFileSync(filePath, 'utf8'))
       return data.sources || []
@@ -25,6 +34,7 @@ function readSources(): DetectedSource[] {
 }
 
 function writeSources(sources: DetectedSource[]) {
+  ensureDataDir()
   fs.writeFileSync(filePath, JSON.stringify({ sources }, null, 2))
 }
 
