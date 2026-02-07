@@ -602,42 +602,6 @@ export default function AdminPage() {
                 </CardContent>
               </Card>
 
-              {/* Approved Sources */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Sources approuvées</CardTitle>
-                  <CardDescription>Sources indexées dans la base de connaissances IA</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {sources.filter(s => s.status === 'approved').length === 0 ? (
-                      <div className="text-center py-4 text-gray-500">
-                        <p className="text-sm">Aucune source approuvée</p>
-                      </div>
-                    ) : (
-                      sources.filter(s => s.status === 'approved').map((source) => (
-                        <div key={source.id} className="border rounded-lg p-4 flex justify-between items-center">
-                          <div>
-                            <h4 className="font-semibold flex items-center gap-2">
-                              {source.type === "pdf" ? <Upload className="h-4 w-4" /> : <Link className="h-4 w-4" />}
-                              {source.title}
-                            </h4>
-                            <p className="text-sm text-gray-600">
-                              {source.chunkCount} chunks indexés
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              Approuvé le {source.processedAt ? new Date(source.processedAt).toLocaleDateString('fr-FR') : '—'}
-                            </p>
-                          </div>
-                          <Button size="sm" variant="ghost" onClick={() => handleDeleteSource(source.id)}>
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
             </TabsContent>
 
             <TabsContent value="users" className="space-y-6">
