@@ -89,84 +89,72 @@ function processRegulations(regulations: Regulation[]): Regulation[] {
 }
 
 const fallbackData = (): Regulation[] => {
-  // Calculate dates relative to today
-  const today = new Date()
-  const in3Months = new Date(today.getTime() + 90 * 24 * 60 * 60 * 1000)
-  const in6Months = new Date(today.getTime() + 180 * 24 * 60 * 60 * 1000)
-  const in12Months = new Date(today.getTime() + 365 * 24 * 60 * 60 * 1000)
-  const in18Months = new Date(today.getTime() + 548 * 24 * 60 * 60 * 1000)
-
-  const formatDate = (d: Date) => d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
-
+  // Données statiques vérifiées avec des URLs qui fonctionnent
+  // Ces données sont utilisées si l'IA ne peut pas faire de recherche web
   const regulations: Regulation[] = [
-    {
-      id: "euro7",
-      category: "Environnement",
-      scope: "UE",
-      title: "Norme Euro 7 - Application progressive",
-      summary: "Nouvelle norme anti-pollution avec exigences renforcées sur les freins, particules et durabilité des batteries. Application selon catégories de véhicules.",
-      deadline: formatDate(in12Months),
-      urgency: "Important",
-      impact: "Renouvellement de flotte nécessaire",
-      sources: [
-        { label: "Règlement (UE) 2024/1257 - Euro 7", href: "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1257" },
-        { label: "Conseil UE - Adoption Euro 7", href: "https://www.consilium.europa.eu/fr/press/press-releases/2024/04/12/euro-7-council-adopts-new-rules-on-emission-limits-for-cars-vans-buses-and-trucks/" }
-      ]
-    },
-    {
-      id: "peages-co2",
-      category: "Fiscalité",
-      scope: "France/UE",
-      title: "Péages différenciés selon CO2",
-      summary: "Modulation obligatoire des péages poids lourds selon les classes CO2 et mise en place d'une redevance 'coûts externes' pour la pollution atmosphérique.",
-      deadline: formatDate(in6Months),
-      urgency: "Important",
-      impact: "Augmentation des coûts de transport",
-      sources: [
-        { label: "Directive Eurovignette (UE) 2022/362", href: "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32022L0362" },
-        { label: "Vie publique - Tarification routière", href: "https://www.vie-publique.fr/loi/278128-loi-22-aout-2021-climat-et-resilience-convention-citoyenne-climat" }
-      ]
-    },
-    {
-      id: "eco-redevance-alsace",
-      category: "Fiscalité",
-      scope: "France",
-      title: "Éco-redevance PL Alsace",
-      summary: "Mise en place du R-Pass pour les poids lourds sur les autoroutes A35 et A36. Tarification d'environ 0,15€/km pour financer les mobilités.",
-      deadline: formatDate(in18Months),
-      urgency: "Modéré",
-      impact: "Coût supplémentaire sur les axes alsaciens",
-      sources: [
-        { label: "CEA - R-Pass Alsace", href: "https://www.alsace.eu/actualite/r-pass-tout-savoir-sur-la-contribution-poids-lourds-en-alsace/" },
-        { label: "Legifrance - Loi 3DS Art. 137", href: "https://www.legifrance.gouv.fr/jorf/article_jo/JORFARTI000045197831" }
-      ]
-    },
     {
       id: "chronotachygraphe-v2",
       category: "Chronotachygraphe",
       scope: "UE",
-      title: "Chronotachygraphe intelligent V2",
-      summary: "Obligation d'équiper les véhicules neufs de chronotachygraphes intelligents de 2ème génération avec géolocalisation automatique.",
-      deadline: formatDate(in3Months),
-      urgency: "Critique",
-      impact: "Mise à jour obligatoire des équipements",
+      title: "Chronotachygraphe intelligent V2 obligatoire",
+      summary: "Les véhicules neufs > 3,5t doivent être équipés du tachygraphe intelligent de 2ème génération. Les véhicules existants doivent être mis à jour d'ici 2025 pour les transports internationaux.",
+      deadline: "31 décembre 2025",
+      urgency: "Important",
+      impact: "Mise à jour ou remplacement des chronotachygraphes obligatoire",
       sources: [
-        { label: "Règlement (UE) 2020/1054 - Paquet mobilité", href: "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32020R1054" },
-        { label: "Règlement (UE) 165/2014 - Tachygraphes", href: "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32014R0165" }
+        { label: "Règlement (UE) 2020/1054 - Paquet mobilité I", href: "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32020R1054" }
       ]
     },
     {
-      id: "zfe-extension",
+      id: "euro7-pl",
+      category: "Environnement",
+      scope: "UE",
+      title: "Norme Euro 7 pour poids lourds",
+      summary: "Nouvelles limites d'émissions pour les véhicules lourds neufs. Exigences renforcées sur les émissions de freins et la durabilité des systèmes antipollution.",
+      deadline: "1er juillet 2027",
+      urgency: "Modéré",
+      impact: "Renouvellement progressif de la flotte PL",
+      sources: [
+        { label: "Règlement (UE) 2024/1257 - Euro 7", href: "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1257" }
+      ]
+    },
+    {
+      id: "zfe-crit-air-3",
       category: "Environnement",
       scope: "France",
-      title: "Extension des ZFE-m",
-      summary: "Renforcement des Zones à Faibles Émissions dans les agglomérations de plus de 150 000 habitants. Restrictions progressives pour les véhicules Crit'Air 3 et plus.",
-      deadline: formatDate(in3Months),
+      title: "ZFE-m : Restriction Crit'Air 3 et plus",
+      summary: "Les agglomérations de plus de 150 000 habitants doivent restreindre l'accès aux véhicules Crit'Air 3, 4 et 5. Calendrier variable selon les métropoles.",
+      deadline: "1er janvier 2025",
       urgency: "Critique",
-      impact: "Accès restreint aux centres urbains",
+      impact: "Accès restreint aux centres urbains pour PL anciens",
       sources: [
-        { label: "Ministère - ZFE obligatoires", href: "https://www.ecologie.gouv.fr/politiques-publiques/zones-faibles-emissions-mobilite-zfe-m" },
-        { label: "Legifrance - Décret ZFE", href: "https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000043956924" }
+        { label: "Ministère - Zones à faibles émissions", href: "https://www.ecologie.gouv.fr/politiques-publiques/zones-faibles-emissions-mobilite-zfe-m" }
+      ]
+    },
+    {
+      id: "eurovignette-co2",
+      category: "Fiscalité",
+      scope: "France/UE",
+      title: "Eurovignette : modulation CO2 des péages",
+      summary: "Modulation obligatoire des péages PL selon les classes d'émissions CO2. Les véhicules les plus polluants paieront plus cher sur les autoroutes.",
+      deadline: "25 mars 2027",
+      urgency: "Modéré",
+      impact: "Hausse des coûts pour véhicules polluants",
+      sources: [
+        { label: "Directive (UE) 2022/362 - Eurovignette", href: "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32022L0362" }
+      ]
+    },
+    {
+      id: "r-pass-alsace",
+      category: "Fiscalité",
+      scope: "France",
+      title: "R-Pass : taxe PL en Alsace",
+      summary: "Mise en place d'une contribution kilométrique pour les poids lourds > 3,5t sur les autoroutes A35 et A36 en Alsace. Environ 0,15€/km.",
+      deadline: "1er janvier 2027",
+      urgency: "Modéré",
+      impact: "Surcoût pour les trajets via l'Alsace",
+      sources: [
+        { label: "Collectivité européenne d'Alsace - R-Pass", href: "https://www.alsace.eu/dossiers/r-pass/" }
       ]
     },
   ]
@@ -213,39 +201,46 @@ export async function GET(req: Request) {
     console.log(`🔍 [REGULATIONS] Recherche des réglementations transport via OpenAI...`)
 
     const todayFormatted = getTodayFrench()
-    const prompt = `Tu es un expert en réglementation du transport routier. La date d'aujourd'hui est le ${todayFormatted}.
+    const currentYear = new Date().getFullYear()
+    const prompt = `═══════════════════════════════════════════════════════════════
+📅 DATE DU JOUR : ${todayFormatted} (ANNÉE ${currentYear})
+═══════════════════════════════════════════════════════════════
 
-Fais une recherche web et renvoie STRICTEMENT un JSON avec un tableau "items" listant les principales réglementations À VENIR (dates futures uniquement, après le ${todayFormatted}) pour le transport routier en France et UE.
+Tu es un expert en réglementation du transport routier français et européen.
 
-IMPORTANT: N'inclus QUE les réglementations dont la date d'application est DANS LE FUTUR.
+MISSION : Rechercher via web_search les réglementations transport À VENIR et retourner un JSON.
 
-Recherche les actualités réglementaires sur:
-- Chronotachygraphes (nouvelles obligations, mises à jour)
-- ZFE (Zones à Faibles Émissions)
-- Normes Euro 7
-- Péages et taxes transport
-- Réglementation sociale (temps de conduite, repos)
-- Sécurité routière PL
+⚠️ RÈGLES ABSOLUES :
+1. UNIQUEMENT des réglementations avec des dates FUTURES (après ${todayFormatted})
+2. UNIQUEMENT des URLs que tu as RÉELLEMENT visitées via ta recherche web
+3. NE JAMAIS inventer d'URL - si tu n'as pas trouvé de source fiable, NE PAS inclure la réglementation
+4. Préférer les sources officielles : eur-lex.europa.eu, legifrance.gouv.fr, ecologie.gouv.fr
 
-Format pour chaque élément:
+THÈMES À RECHERCHER :
+- Chronotachygraphe intelligent V2 (paquet mobilité)
+- ZFE-m (Zones à Faibles Émissions)
+- Norme Euro 7
+- Péages et taxes transport (Eurovignette, R-Pass)
+- Temps de conduite et repos
+
+FORMAT JSON STRICT (retourne UNIQUEMENT ce JSON, rien d'autre) :
 {
-  "id": string (slug unique),
-  "category": "Chronotachygraphe" | "Environnement" | "Social" | "Sécurité" | "Fiscalité",
-  "scope": "UE" | "France" | "France/UE",
-  "title": string (titre court),
-  "summary": string (résumé 2-3 phrases),
-  "deadline": string (date d'application au format "1er janvier 2025" ou "Janvier 2025"),
-  "urgency": "Critique" | "Important" | "Modéré" (Critique si < 3 mois de la date d'aujourd'hui),
-  "impact": string (impact pour les transporteurs),
-  "sources": [{ "label": string (titre court de l'article), "href": string (URL DIRECTE vers l'article ou le texte officiel, PAS le domaine) }]
+  "items": [
+    {
+      "id": "slug-unique",
+      "category": "Chronotachygraphe" | "Environnement" | "Social" | "Sécurité" | "Fiscalité",
+      "scope": "UE" | "France" | "France/UE",
+      "title": "Titre court",
+      "summary": "Résumé factuel 2-3 phrases",
+      "deadline": "Date au format '1er janvier ${currentYear + 1}' ou 'Janvier ${currentYear + 1}'",
+      "urgency": "Critique" (< 3 mois) | "Important" (3-6 mois) | "Modéré" (> 6 mois),
+      "impact": "Impact concret pour transporteurs",
+      "sources": [{ "label": "Titre du document", "href": "URL EXACTE trouvée via recherche" }]
+    }
+  ]
 }
 
-IMPORTANT pour les sources:
-- Fournis des URLs DIRECTES vers les articles, règlements ou textes officiels (ex: https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1257)
-- NE PAS mettre de liens génériques vers des domaines (ex: https://eur-lex.europa.eu/)
-- Chaque source doit pointer vers un document vérifiable qui prouve l'information
-
-Retourne 5-8 réglementations pertinentes avec des dates FUTURES, triées par urgence. Sources officielles uniquement (eur-lex, legifrance, ecologie.gouv.fr, vie-publique.fr). Aucune sortie hors JSON.`
+⚠️ RAPPEL : Nous sommes en ${currentYear}. Ne cite QUE des sources que tu as visitées. Maximum 6 réglementations.`
 
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 30000) // 30s timeout

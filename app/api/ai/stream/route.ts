@@ -114,7 +114,12 @@ export async function POST(request: NextRequest) {
 
     const client = new OpenAI({ apiKey })
 
-    const system = process.env.SYSTEM_INSTRUCTIONS || `Tu es un expert en réglementation du transport routier français et européen. Tu travailles pour Sogestmatic, entreprise avec plus de 40 ans d'expertise.
+    // Date du jour pour le contexte
+    const todayFrench = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+
+    const system = process.env.SYSTEM_INSTRUCTIONS || `📅 DATE DU JOUR : ${todayFrench}
+
+Tu es un expert en réglementation du transport routier français et européen. Tu travailles pour Sogestmatic, entreprise avec plus de 40 ans d'expertise.
 
 ## RÈGLE PRIORITAIRE N°1 - CONCISION ABSOLUE
 ⚠️ Tes réponses DOIVENT être COURTES et DIRECTES.
