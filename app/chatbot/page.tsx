@@ -231,18 +231,18 @@ export default function ChatbotPage() {
 
   // Auto-scroll vers le bas quand on ouvre une conversation
   useEffect(() => {
-    if (currentConversation && currentConversation.messages.length > 0) {
-      // Attendre que le DOM soit rendu puis scroller en bas
+    if (currentConversationId && currentConversation && currentConversation.messages.length > 0) {
+      // Attendre que le DOM soit complètement rendu
       const timer = setTimeout(() => {
         if (!scrollAreaRef.current) return
         const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]')
         if (scrollContainer) {
           scrollContainer.scrollTop = scrollContainer.scrollHeight
         }
-      }, 50)
+      }, 200)
       return () => clearTimeout(timer)
     }
-  }, [currentConversationId])
+  }, [currentConversationId, currentConversation?.messages?.length])
 
   // Détecter si l'utilisateur est en bas du scroll (pour afficher/masquer la flèche)
   useEffect(() => {
