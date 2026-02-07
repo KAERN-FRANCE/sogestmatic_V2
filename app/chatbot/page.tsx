@@ -251,6 +251,7 @@ export default function ChatbotPage() {
 
   // Fonction pour scroller vers le bas
   const scrollToBottom = () => {
+    setShowScrollButton(false) // Cacher immédiatement le bouton
     if (!scrollAreaRef.current) return
     const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]')
     if (scrollContainer) {
