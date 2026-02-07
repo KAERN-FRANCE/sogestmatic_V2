@@ -218,44 +218,74 @@ export async function GET(req: Request) {
 📅 DATE DU JOUR : ${todayFormatted} (ANNÉE ${currentYear})
 ═══════════════════════════════════════════════════════════════
 
-Tu es un expert en réglementation du transport routier français et européen.
+Tu es un expert en veille réglementaire du transport routier français et européen.
 
-MISSION : Rechercher via web_search les réglementations transport À VENIR et retourner un JSON.
+🎯 MISSION : Effectuer une recherche web APPROFONDIE pour trouver les réglementations transport À VENIR.
 
-⚠️ RÈGLES ABSOLUES :
-1. UNIQUEMENT des réglementations avec des dates FUTURES (après ${todayFormatted})
-2. UNIQUEMENT des URLs que tu as RÉELLEMENT visitées via ta recherche web
-3. NE JAMAIS inventer d'URL - si tu n'as pas trouvé de source fiable, NE PAS inclure la réglementation
-4. Préférer les sources officielles : eur-lex.europa.eu, legifrance.gouv.fr, ecologie.gouv.fr
+═══════════════════════════════════════════════════════════════
+📋 MÉTHODOLOGIE DE RECHERCHE (OBLIGATOIRE)
+═══════════════════════════════════════════════════════════════
 
-THÈMES À RECHERCHER :
-- Chronotachygraphe intelligent V2 (paquet mobilité)
-- ZFE-m (Zones à Faibles Émissions)
-- Norme Euro 7
-- Péages et taxes transport (Eurovignette, R-Pass)
-- Temps de conduite et repos
+Effectue ces recherches web une par une :
 
-FORMAT JSON STRICT (retourne UNIQUEMENT ce JSON, rien d'autre) :
+1. "chronotachygraphe VUL 2,5 tonnes ${currentYear} ${currentYear + 1} site:eur-lex.europa.eu"
+2. "norme Euro 7 date application ${currentYear} site:eur-lex.europa.eu"
+3. "ZFE Crit'Air 3 interdiction ${currentYear} ${currentYear + 1} site:ecologie.gouv.fr"
+4. "R-Pass taxe poids lourds Alsace ${currentYear} site:alsace.eu"
+5. "eurovignette directive ${currentYear} site:eur-lex.europa.eu"
+6. "réglementation transport routier ${currentYear} ${currentYear + 1}" (recherche générale)
+
+═══════════════════════════════════════════════════════════════
+🔗 SOURCES OFFICIELLES À PRIVILÉGIER
+═══════════════════════════════════════════════════════════════
+
+- eur-lex.europa.eu (règlements et directives UE)
+- legifrance.gouv.fr (textes français)
+- ecologie.gouv.fr (ZFE, environnement)
+- alsace.eu (R-Pass Alsace)
+- fleet.vdo.fr (chronotachygraphe)
+- trans.info (actualités transport)
+
+═══════════════════════════════════════════════════════════════
+⚠️ RÈGLES ABSOLUES
+═══════════════════════════════════════════════════════════════
+
+1. ✅ UNIQUEMENT des dates FUTURES (après le ${todayFormatted})
+2. ✅ UNIQUEMENT des URLs que tu as RÉELLEMENT visitées
+3. ❌ NE JAMAIS inventer ou deviner une URL
+4. ❌ NE JAMAIS inclure une réglementation sans source vérifiée
+5. ✅ Préférer les URLs EUR-Lex avec le format: https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024RXXXX
+
+═══════════════════════════════════════════════════════════════
+📄 FORMAT DE RÉPONSE (JSON UNIQUEMENT)
+═══════════════════════════════════════════════════════════════
+
 {
   "items": [
     {
-      "id": "slug-unique",
+      "id": "slug-unique-kebab-case",
       "category": "Chronotachygraphe" | "Environnement" | "Social" | "Sécurité" | "Fiscalité",
       "scope": "UE" | "France" | "France/UE",
-      "title": "Titre court",
-      "summary": "Résumé factuel 2-3 phrases",
+      "title": "Titre court et précis",
+      "summary": "Résumé factuel de 2-3 phrases avec les détails clés",
       "deadline": "Date au format '1er janvier ${currentYear + 1}' ou 'Janvier ${currentYear + 1}'",
-      "urgency": "Critique" (< 3 mois) | "Important" (3-6 mois) | "Modéré" (> 6 mois),
-      "impact": "Impact concret pour transporteurs",
-      "sources": [{ "label": "Titre du document", "href": "URL EXACTE trouvée via recherche" }]
+      "urgency": "Critique" | "Important" | "Modéré",
+      "impact": "Impact concret pour les transporteurs routiers",
+      "sources": [{ "label": "Nom officiel du document", "href": "URL EXACTE visitée" }]
     }
   ]
 }
 
-⚠️ RAPPEL : Nous sommes en ${currentYear}. Ne cite QUE des sources que tu as visitées. Maximum 6 réglementations.`
+Règles urgency:
+- "Critique" = échéance dans moins de 3 mois
+- "Important" = échéance dans 3 à 6 mois
+- "Modéré" = échéance dans plus de 6 mois
+
+⚠️ RAPPEL FINAL : Nous sommes le ${todayFormatted} (${currentYear}).
+Retourne UNIQUEMENT le JSON, pas d'explication. Maximum 6 réglementations avec sources vérifiées.`
 
     const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 30000) // 30s timeout
+    const timeout = setTimeout(() => controller.abort(), 45000) // 45s timeout for thorough search
 
     const resp = await fetch('https://api.openai.com/v1/responses', {
       method: 'POST',
