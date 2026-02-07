@@ -17,19 +17,27 @@ const officialDomains = [
   'europa.eu'
 ]
 
-// Interface pour les sources détectées
-interface DetectedSource {
+// Interface pour les sources (unifiée)
+interface Source {
   id: string
-  url: string
   title: string
-  detectedAt: string
-  context: string
+  url?: string
+  type: 'url' | 'pdf' | 'detected'
+  status: 'pending' | 'approved' | 'rejected' | 'processing' | 'error'
+  detectedAt?: string
+  context?: string
+  category?: string
+  fileName?: string
+  fileData?: string
+  submittedBy?: string
+  submittedByEmail?: string
+  submittedAt?: string
 }
 
 // Chemin des données (Railway Volume ou local)
 const DATA_PATH = process.env.DATA_PATH || path.join(process.cwd(), 'data')
 
-// Fonction pour sauvegarder une source détectée
+// Fonction pour sauvegarder une source détectée automatiquement
 function saveDetectedSource(url: string, title: string, context: string) {
   try {
     // Créer le dossier si nécessaire
@@ -37,8 +45,8 @@ function saveDetectedSource(url: string, title: string, context: string) {
       fs.mkdirSync(DATA_PATH, { recursive: true })
     }
 
-    const filePath = path.join(DATA_PATH, 'detected-sources.json')
-    let data = { sources: [] as DetectedSource[] }
+    const filePath = path.join(DATA_PATH, 'sources.json')
+    let data = { sources: [] as Source[] }
 
     if (fs.existsSync(filePath)) {
       data = JSON.parse(fs.readFileSync(filePath, 'utf8'))
@@ -49,8 +57,10 @@ function saveDetectedSource(url: string, title: string, context: string) {
     if (!exists) {
       data.sources.unshift({
         id: `src_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        url,
         title,
+        url,
+        type: 'detected',
+        status: 'pending',
         detectedAt: new Date().toISOString(),
         context: context.substring(0, 200) // Limiter le contexte
       })

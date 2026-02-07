@@ -37,29 +37,24 @@ type AdminUser = AppUser & {
   billing?: BillingAddress
 }
 
-type AISource = {
+// Source unifiée (détectée auto ou soumise manuellement)
+type Source = {
   id: string
   title: string
-  category: string
-  type: 'pdf' | 'url'
-  status: 'pending' | 'approved' | 'rejected' | 'processing' | 'error'
   url?: string
+  type: 'url' | 'pdf' | 'detected'
+  status: 'pending' | 'approved' | 'rejected' | 'processing' | 'error'
+  detectedAt?: string
+  context?: string
+  category?: string
   fileName?: string
-  submittedBy: string
-  submittedByEmail: string
-  submittedAt: string
+  submittedBy?: string
+  submittedByEmail?: string
+  submittedAt?: string
   processedAt?: string
   rejectedAt?: string
   chunkCount?: number
   errorMessage?: string
-}
-
-type DetectedSource = {
-  id: string
-  url: string
-  title: string
-  detectedAt: string
-  context: string
 }
 
 export default function AdminPage() {
@@ -67,11 +62,9 @@ export default function AdminPage() {
   const [newSource, setNewSource] = useState({ title: "", url: "", category: "" })
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [submittingSource, setSubmittingSource] = useState(false)
-  const [sources, setSources] = useState<AISource[]>([])
-  const [sourcesLoading, setSourcesLoading] = useState(false)
+  const [sources, setSources] = useState<Source[]>([])
+  const [sourcesLoading, setSourcesLoading] = useState(true)
   const [processingSourceId, setProcessingSourceId] = useState<string | null>(null)
-  const [detectedSources, setDetectedSources] = useState<DetectedSource[]>([])
-  const [detectedLoading, setDetectedLoading] = useState(true)
   const [allUsers, setAllUsers] = useState<AdminUser[]>([])
   const [roleEdits, setRoleEdits] = useState<Record<string, AdminUser["role"]>>({})
   const [durationEdits, setDurationEdits] = useState<Record<string, string>>({})
@@ -148,67 +141,38 @@ export default function AdminPage() {
       })
       setRecentLogs(logs)
     })
-    // AI sources (real-time)
-    const sourcesQuery = query(collection(db, "ai_sources"), orderBy("submittedAt", "desc"))
-    const sourcesUnsub = onSnapshot(sourcesQuery, (snap) => {
-      const list: AISource[] = []
-      snap.forEach((d) => {
-        const data = d.data() as any
-        list.push({
-          id: d.id,
-          title: data.title || "",
-          category: data.category || "",
-          type: data.type || "url",
-          status: data.status || "pending",
-          url: data.url,
-          fileName: data.fileName,
-          submittedBy: data.submittedBy || "",
-          submittedByEmail: data.submittedByEmail || "",
-          submittedAt: data.submittedAt || new Date().toISOString(),
-          processedAt: data.processedAt,
-          rejectedAt: data.rejectedAt,
-          chunkCount: data.chunkCount,
-          errorMessage: data.errorMessage,
-        })
-      })
-      setSources(list)
-      setSourcesLoading(false)
-    }, (error) => {
-      console.error('Erreur chargement sources:', error)
-      setSourcesLoading(false)
-    })
     return () => {
       clearTimeout(loadingTimeout)
       unsub()
       statsUnsub()
       logsUnsub()
-      sourcesUnsub()
     }
   }, [])
 
-  // Charger les sources détectées automatiquement (sans Firebase)
-  const fetchDetectedSources = async () => {
+  // Charger les sources (sans Firebase - stockage JSON sur Railway)
+  const fetchSources = async () => {
     try {
       const res = await fetch('/api/admin/detected-sources')
       if (res.ok) {
         const data = await res.json()
-        setDetectedSources(data.sources || [])
+        setSources(data.sources || [])
       }
     } catch (error) {
-      console.error('Erreur chargement sources détectées:', error)
+      console.error('Erreur chargement sources:', error)
     } finally {
-      setDetectedLoading(false)
+      setSourcesLoading(false)
     }
   }
 
   useEffect(() => {
-    fetchDetectedSources()
+    fetchSources()
     // Rafraîchir toutes les 30 secondes
-    const interval = setInterval(fetchDetectedSources, 30000)
+    const interval = setInterval(fetchSources, 30000)
     return () => clearInterval(interval)
   }, [])
 
-  const handleDeleteDetectedSource = async (id: string) => {
+  const handleDeleteSource = async (id: string) => {
+    if (!confirm('Supprimer cette source ?')) return
     try {
       const res = await fetch('/api/admin/detected-sources', {
         method: 'DELETE',
@@ -216,15 +180,15 @@ export default function AdminPage() {
         body: JSON.stringify({ id }),
       })
       if (res.ok) {
-        setDetectedSources(prev => prev.filter(s => s.id !== id))
+        setSources(prev => prev.filter(s => s.id !== id))
       }
     } catch (error) {
       console.error('Erreur suppression source:', error)
     }
   }
 
-  const handleClearAllDetectedSources = async () => {
-    if (!confirm('Supprimer toutes les sources détectées ?')) return
+  const handleClearAllSources = async () => {
+    if (!confirm('Supprimer toutes les sources en attente ?')) return
     try {
       const res = await fetch('/api/admin/detected-sources', {
         method: 'POST',
@@ -232,7 +196,7 @@ export default function AdminPage() {
         body: JSON.stringify({ action: 'clear-all' }),
       })
       if (res.ok) {
-        setDetectedSources([])
+        setSources([])
       }
     } catch (error) {
       console.error('Erreur suppression sources:', error)
@@ -387,7 +351,7 @@ export default function AdminPage() {
         formData.append('url', newSource.url)
       }
 
-      const res = await fetch('/api/admin/sources', {
+      const res = await fetch('/api/admin/detected-sources', {
         method: 'POST',
         body: formData,
       })
@@ -395,6 +359,7 @@ export default function AdminPage() {
       if (res.ok) {
         setNewSource({ title: '', url: '', category: '' })
         setSelectedFile(null)
+        fetchSources() // Rafraîchir la liste
       } else {
         const data = await res.json()
         alert(data.error || 'Erreur lors de l\'ajout')
@@ -416,16 +381,19 @@ export default function AdminPage() {
   const handleApproveSource = async (id: string) => {
     setProcessingSourceId(id)
     try {
-      const res = await fetch(`/api/admin/sources/${id}/approve`, {
-        method: 'POST',
+      const res = await fetch('/api/admin/detected-sources', {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          id,
+          action: 'approve',
           adminId: user?.id || 'admin',
-          adminEmail: user?.email || 'admin@sogestmatic.com',
         }),
       })
 
-      if (!res.ok) {
+      if (res.ok) {
+        fetchSources()
+      } else {
         const data = await res.json()
         alert(data.error || 'Erreur lors de l\'approbation')
       }
@@ -438,37 +406,24 @@ export default function AdminPage() {
 
   const handleRejectSource = async (id: string) => {
     try {
-      const res = await fetch(`/api/admin/sources/${id}/reject`, {
-        method: 'POST',
+      const res = await fetch('/api/admin/detected-sources', {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          id,
+          action: 'reject',
           adminId: user?.id || 'admin',
         }),
       })
 
-      if (!res.ok) {
+      if (res.ok) {
+        fetchSources()
+      } else {
         const data = await res.json()
         alert(data.error || 'Erreur lors du rejet')
       }
     } catch (error) {
       alert('Erreur lors du rejet')
-    }
-  }
-
-  const handleDeleteSource = async (id: string) => {
-    if (!confirm('Supprimer cette source ?')) return
-
-    try {
-      const res = await fetch(`/api/admin/sources/${id}`, {
-        method: 'DELETE',
-      })
-
-      if (!res.ok) {
-        const data = await res.json()
-        alert(data.error || 'Erreur lors de la suppression')
-      }
-    } catch (error) {
-      alert('Erreur lors de la suppression')
     }
   }
 
@@ -514,92 +469,16 @@ export default function AdminPage() {
             </TabsList>
 
             <TabsContent value="sources" className="space-y-6">
-              {/* Sources détectées automatiquement */}
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="flex items-center gap-2">
-                        <Link className="h-5 w-5" />
-                        Sources citées par l'IA (non-officielles)
-                      </CardTitle>
-                      <CardDescription>
-                        Sources détectées automatiquement dans les réponses de l'IA qui ne proviennent pas de sites officiels
-                      </CardDescription>
-                    </div>
-                    {detectedSources.length > 0 && (
-                      <Button variant="outline" size="sm" onClick={handleClearAllDetectedSources}>
-                        <Trash2 className="h-4 w-4 mr-1" />
-                        Tout effacer
-                      </Button>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {detectedLoading ? (
-                      <div className="text-center py-8 text-gray-500">
-                        <Loader2 className="h-8 w-8 mx-auto mb-2 animate-spin opacity-50" />
-                        <p className="text-sm">Chargement...</p>
-                      </div>
-                    ) : detectedSources.length === 0 ? (
-                      <div className="text-center py-8 text-gray-500">
-                        <Database className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                        <p className="text-lg font-medium">Aucune source détectée</p>
-                        <p className="text-sm">Les sources non-officielles citées par l'IA apparaîtront ici</p>
-                      </div>
-                    ) : (
-                      detectedSources.map((source) => (
-                        <div key={source.id} className="border rounded-lg p-4 bg-orange-50 border-orange-200">
-                          <div className="flex justify-between items-start gap-4">
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-semibold text-orange-900 flex items-center gap-2">
-                                <Link className="h-4 w-4 flex-shrink-0" />
-                                {source.title}
-                              </h4>
-                              <a
-                                href={source.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-sm text-blue-600 hover:underline break-all"
-                              >
-                                {source.url}
-                              </a>
-                              <p className="text-xs text-gray-600 mt-1">
-                                Détecté le {new Date(source.detectedAt).toLocaleString('fr-FR')}
-                              </p>
-                              {source.context && (
-                                <p className="text-xs text-gray-500 mt-1 italic">
-                                  Contexte: "{source.context}..."
-                                </p>
-                              )}
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteDetectedSource(source.id)}
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
               {/* Info Card */}
               <Card className="bg-blue-50 border-blue-200">
                 <CardContent className="pt-6">
                   <div className="flex items-start gap-4">
                     <Database className="h-8 w-8 text-blue-600 flex-shrink-0" />
                     <div>
-                      <h3 className="font-semibold text-blue-900">Sources soumises manuellement</h3>
+                      <h3 className="font-semibold text-blue-900">Gestion des sources IA</h3>
                       <p className="text-sm text-blue-800 mt-1">
-                        Vous pouvez ajouter manuellement des PDFs ou URLs pour enrichir les réponses de l'IA.
-                        Une fois approuvée, la source est indexée dans le système RAG.
+                        Les sources non-officielles citées par l'IA sont détectées automatiquement et apparaissent ci-dessous.
+                        Vous pouvez aussi ajouter manuellement des PDFs ou URLs pour enrichir les réponses.
                       </p>
                     </div>
                   </div>
@@ -673,11 +552,26 @@ export default function AdminPage() {
                 </CardContent>
               </Card>
 
-              {/* Pending Sources */}
+              {/* Sources détectées automatiquement en attente de validation */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Sources en attente de validation</CardTitle>
-                  <CardDescription>Approuvez ou rejetez les sources soumises</CardDescription>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <Link className="h-5 w-5" />
+                        Sources détectées (non-officielles)
+                      </CardTitle>
+                      <CardDescription>
+                        Sources citées par l'IA qui ne proviennent pas de sites officiels - à valider ou rejeter
+                      </CardDescription>
+                    </div>
+                    {sources.filter(s => s.status === 'pending' && s.type === 'detected').length > 0 && (
+                      <Button variant="outline" size="sm" onClick={handleClearAllSources}>
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        Tout effacer
+                      </Button>
+                    )}
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
@@ -686,50 +580,52 @@ export default function AdminPage() {
                         <Loader2 className="h-12 w-12 mx-auto mb-4 animate-spin opacity-50" />
                         <p className="text-sm">Chargement...</p>
                       </div>
-                    ) : sources.filter(s => s.status === 'pending' || s.status === 'processing' || s.status === 'error').length === 0 ? (
+                    ) : sources.filter(s => s.status === 'pending' && s.type === 'detected').length === 0 ? (
                       <div className="text-center py-8 text-gray-500">
                         <Database className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                        <p className="text-lg font-medium">Aucune source en attente</p>
-                        <p className="text-sm">Les sources soumises apparaîtront ici</p>
+                        <p className="text-lg font-medium">Aucune source détectée</p>
+                        <p className="text-sm">Les sources non-officielles citées par l'IA apparaîtront ici</p>
                       </div>
                     ) : (
-                      sources.filter(s => s.status === 'pending' || s.status === 'processing' || s.status === 'error').map((source) => (
-                        <div key={source.id} className="border rounded-lg p-4 space-y-3">
+                      sources.filter(s => s.status === 'pending' && s.type === 'detected').map((source) => (
+                        <div
+                          key={source.id}
+                          className="border rounded-lg p-4 space-y-3 bg-orange-50 border-orange-200"
+                        >
                           <div className="flex justify-between items-start">
-                            <div>
-                              <h4 className="font-semibold flex items-center gap-2">
-                                {source.type === "pdf" ? <Upload className="h-4 w-4" /> : <Link className="h-4 w-4" />}
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-semibold text-orange-900 flex items-center gap-2">
+                                <Link className="h-4 w-4" />
                                 {source.title}
                               </h4>
-                              <p className="text-sm text-gray-600">
-                                {source.type === "pdf" ? `Fichier: ${source.fileName}` : `URL: ${source.url}`}
-                              </p>
-                              <p className="text-sm text-gray-600">
-                                Soumis par {source.submittedByEmail} le {new Date(source.submittedAt).toLocaleDateString('fr-FR')}
-                              </p>
-                              {source.category && (
-                                <p className="text-sm text-gray-500">Catégorie: {source.category}</p>
+                              {source.url && (
+                                <a
+                                  href={source.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-sm text-blue-600 hover:underline break-all"
+                                >
+                                  {source.url}
+                                </a>
                               )}
-                              {source.errorMessage && (
-                                <p className="text-sm text-red-600 mt-1">Erreur: {source.errorMessage}</p>
+                              <p className="text-xs text-gray-600 mt-1">
+                                Détecté le {new Date(source.detectedAt || '').toLocaleString('fr-FR')}
+                              </p>
+                              {source.context && (
+                                <p className="text-xs text-gray-500 mt-1 italic">
+                                  Contexte: "{source.context}..."
+                                </p>
                               )}
                             </div>
-                            {source.status === 'pending' && <Badge variant="outline">En attente</Badge>}
-                            {source.status === 'processing' && (
-                              <Badge variant="outline" className="bg-yellow-50 text-yellow-700">
-                                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                                Indexation...
-                              </Badge>
-                            )}
-                            {source.status === 'error' && (
-                              <Badge variant="destructive">Erreur</Badge>
-                            )}
+                            <Badge variant="outline" className="bg-orange-100 text-orange-700">
+                              En attente
+                            </Badge>
                           </div>
                           <div className="flex gap-2">
                             <Button
                               size="sm"
                               onClick={() => handleApproveSource(source.id)}
-                              disabled={processingSourceId === source.id || source.status === 'processing'}
+                              disabled={processingSourceId === source.id}
                               className="bg-green-600 hover:bg-green-700"
                             >
                               {processingSourceId === source.id ? (
@@ -737,16 +633,23 @@ export default function AdminPage() {
                               ) : (
                                 <Check className="h-4 w-4 mr-1" />
                               )}
-                              {source.status === 'error' ? 'Réessayer' : 'Approuver'}
+                              Approuver
                             </Button>
                             <Button
                               size="sm"
                               variant="destructive"
                               onClick={() => handleRejectSource(source.id)}
-                              disabled={source.status === 'processing'}
                             >
                               <X className="h-4 w-4 mr-1" />
                               Rejeter
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleDeleteSource(source.id)}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
                         </div>
